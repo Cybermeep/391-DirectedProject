@@ -1,0 +1,55 @@
+# Visual Studio files
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Python files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Dataset files (exclude large CSV files)
+*.csv
+*.zip
+*.gz
+*.tar
+*.7z
+*.rar
+*.pcap
+*.pcapng
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs and databases
+*.log
+*.db
+*.sqlite
+*.sqlite3
+
+# ML model files (save these but exclude if they're large)
+*.joblib
+*.pkl
+*.h5
+*.pb
+
+# Temporary files
+temp/
+tmp/
+*.tmp
