@@ -1,0 +1,14 @@
+
+// renderer process TypeScript dependency - bm
+{
+  "extends": "@electron-toolkit/tsconfig/tsconfig.web.json",
+  "include": ["renderer/src/**/*", "renderer/src/**/*.d.ts"],
+  "compilerOptions": {
+    "composite": true,
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    "paths": {
+      "@renderer/*": ["renderer/src/*"]
+    }
+  }
+}

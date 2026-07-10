@@ -1,0 +1,10 @@
+// renderer and main process TypeScript dependency - bm
+{
+  "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
+  "include": ["electron.vite.config.*", "main/**/*", "preload/**/*"],
+  "compilerOptions": {
+    "composite": true,
+    "ignoreDeprecations": "6.0",
+    "types": ["electron-vite/node"]
+  }
+}

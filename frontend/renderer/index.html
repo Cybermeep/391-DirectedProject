@@ -1,0 +1,18 @@
+<!doctype html>
+
+<!-- default html from electron doc, needs to be same as index.html in ../../out/rendeerer/index.html - bm -->
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>NIDS</title>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://localhost:* ws://localhost:*; img-src 'self' data:"
+    />
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./src/main.tsx"></script>
+  </body>
+</html>
