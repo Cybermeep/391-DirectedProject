@@ -581,6 +581,603 @@ class FINScanDetector(BaseDetector):
         self._tracker.cleanup(now)
 
 
+class SYNFINScanDetector(BaseDetector):
+    """RULE-014: Detects TCP SYN-FIN scans (SYN and FIN both set — an invalid, evasive flag combo)."""
+
+    def __init__(self, rule: Rule) -> None:
+        super().__init__(rule)
+        self._tracker = _RateTracker(rule.time_window)
+
+    def analyze_packet(self, packet_info: Dict[str, Any]) -> List[Dict[str, Any]]:
+        if not packet_info.get('has_tcp'):
+            return []
+        flags = packet_info.get('tcp_flags', {})
+        if not (flags.get('syn') and flags.get('fin')):
+            return []
+
+        src_ip = packet_info.get('src_ip')
+        if not src_ip:
+            return []
+
+        now = self._now(packet_info)
+        count = self._tracker.add(src_ip, now)
+        self._maybe_cleanup(now)
+
+        if count >= self.rule.threshold and not self._in_cooldown(src_ip, now):
+            self._record_alert(src_ip, now)
+            tw = self.rule.time_window
+            return [self._build_alert(
+                packet_info,
+                f'TCP SYN-FIN Scan: {count} SYN+FIN packets in {tw}s from {src_ip}',
+                (f'{src_ip} sent {count} TCP packets with both SYN and FIN flags set in {tw} seconds. '
+                 f'This invalid flag combination is used by scanners to slip past simple firewall/IDS filters.'),
+                count=count,
+            )]
+        return []
+
+    def reset(self) -> None:
+        super().reset()
+        self._tracker.reset()
+
+    def _cleanup(self, now: float) -> None:
+        self._tracker.cleanup(now)
+
+
+class ACKScanDetector(BaseDetector):
+    """RULE-015: Detects TCP ACK scans by tracking unique destination ports hit with bare ACK packets."""
+
+    def __init__(self, rule: Rule) -> None:
+        super().__init__(rule)
+        self._tracker = _UniqueSetTracker(rule.time_window)
+
+    def analyze_packet(self, packet_info: Dict[str, Any]) -> List[Dict[str, Any]]:
+        if not packet_info.get('has_tcp'):
+            return []
+        flags = packet_info.get('tcp_flags', {})
+        # ACK-only: ack set, nothing else — used to probe firewall statefulness
+        if not flags.get('ack'):
+            return []
+        if any(flags.get(f) for f in ('syn', 'fin', 'rst', 'psh', 'urg')):
+            return []
+
+        src_ip = packet_info.get('src_ip')
+        dst_port = packet_info.get('dst_port')
+        if not src_ip or dst_port is None:
+            return []
+
+        now = self._now(packet_info)
+        unique_ports = self._tracker.add(src_ip, dst_port, now)
+        self._maybe_cleanup(now)
+
+        if unique_ports >= self.rule.threshold and not self._in_cooldown(src_ip, now):
+            self._record_alert(src_ip, now)
+            tw = self.rule.time_window
+            return [self._build_alert(
+                packet_info,
+                f'TCP ACK Scan: {unique_ports} unique ports probed with bare ACKs in {tw}s from {src_ip}',
+                (f'{src_ip} sent bare ACK packets to {unique_ports} distinct destination ports in '
+                 f'{tw} seconds without an established connection, consistent with an ACK scan used '
+                 f'to map firewall filtering rules.'),
+                count=unique_ports,
+            )]
+        return []
+
+    def reset(self) -> None:
+        super().reset()
+        self._tracker.reset()
+
+    def _cleanup(self, now: float) -> None:
+        self._tracker.cleanup(now)
+
+
+class ICMPSmurfDetector(BaseDetector):
+    """RULE-016: Detects Smurf-style attacks — ICMP echo requests sent to a broadcast address."""
+
+    def __init__(self, rule: Rule) -> None:
+        super().__init__(rule)
+        self._tracker = _RateTracker(rule.time_window)
+
+    def analyze_packet(self, packet_info: Dict[str, Any]) -> List[Dict[str, Any]]:
+        if not packet_info.get('has_icmp'):
+            return []
+        if packet_info.get('icmp_type') != 8:  # echo request
+            return []
+
+        dst_ip = packet_info.get('dst_ip') or ''
+        if dst_ip != '255.255.255.255' and not dst_ip.endswith('.255'):
+            return []
+
+        src_ip = packet_info.get('src_ip')
+        if not src_ip:
+            return []
+
+        now = self._now(packet_info)
+        count = self._tracker.add(src_ip, now)
+        self._maybe_cleanup(now)
+
+        if count >= self.rule.threshold and not self._in_cooldown(src_ip, now):
+            self._record_alert(src_ip, now)
+            tw = self.rule.time_window
+            return [self._build_alert(
+                packet_info,
+                f'ICMP Smurf Attack: {count} broadcast echo requests in {tw}s from {src_ip} to {dst_ip}',
+                (f'{src_ip} sent {count} ICMP echo requests to broadcast address {dst_ip} in {tw} seconds. '
+                 f'If the source address is spoofed, every host on the subnet will flood the victim with replies.'),
+                count=count,
+            )]
+        return []
+
+    def reset(self) -> None:
+        super().reset()
+        self._tracker.reset()
+
+    def _cleanup(self, now: float) -> None:
+        self._tracker.cleanup(now)
+
+
+class ICMPRedirectDetector(BaseDetector):
+    """RULE-017: Detects ICMP redirect messages, which can be spoofed to hijack victim routing (MITM)."""
+
+    def __init__(self, rule: Rule) -> None:
+        super().__init__(rule)
+        self._tracker = _RateTracker(rule.time_window)
+
+    def analyze_packet(self, packet_info: Dict[str, Any]) -> List[Dict[str, Any]]:
+        if not packet_info.get('has_icmp'):
+            return []
+        if packet_info.get('icmp_type') != 5:  # redirect
+            return []
+
+        src_ip = packet_info.get('src_ip')
+        if not src_ip:
+            return []
+
+        now = self._now(packet_info)
+        count = self._tracker.add(src_ip, now)
+        self._maybe_cleanup(now)
+
+        if count >= self.rule.threshold and not self._in_cooldown(src_ip, now):
+            self._record_alert(src_ip, now)
+            tw = self.rule.time_window
+            return [self._build_alert(
+                packet_info,
+                f'ICMP Redirect Attack: {count} redirect messages in {tw}s from {src_ip}',
+                (f'{src_ip} sent {count} ICMP redirect messages in {tw} seconds. '
+                 f'Spoofed redirects can be used to reroute victim traffic through an attacker-controlled '
+                 f'host for man-in-the-middle interception.'),
+                count=count,
+            )]
+        return []
+
+    def reset(self) -> None:
+        super().reset()
+        self._tracker.reset()
+
+    def _cleanup(self, now: float) -> None:
+        self._tracker.cleanup(now)
+
+
+class DNSQueryFloodDetector(BaseDetector):
+    """RULE-018: Detects an abnormally high rate of DNS queries from a single source."""
+
+    def __init__(self, rule: Rule) -> None:
+        super().__init__(rule)
+        self._tracker = _RateTracker(rule.time_window)
+
+    def analyze_packet(self, packet_info: Dict[str, Any]) -> List[Dict[str, Any]]:
+        if not packet_info.get('has_dns'):
+            return []
+        if packet_info.get('dns_qr') != 'query':
+            return []
+
+        src_ip = packet_info.get('src_ip')
+        if not src_ip:
+            return []
+
+        now = self._now(packet_info)
+        count = self._tracker.add(src_ip, now)
+        self._maybe_cleanup(now)
+
+        if count >= self.rule.threshold and not self._in_cooldown(src_ip, now):
+            self._record_alert(src_ip, now)
+            tw = self.rule.time_window
+            return [self._build_alert(
+                packet_info,
+                f'DNS Query Flood: {count} DNS queries in {tw}s from {src_ip}',
+                (f'{src_ip} issued {count} DNS queries in {tw} seconds, well above normal resolver '
+                 f'usage, consistent with DNS-based denial-of-service or resolver abuse.'),
+                count=count,
+            )]
+        return []
+
+    def reset(self) -> None:
+        super().reset()
+        self._tracker.reset()
+
+    def _cleanup(self, now: float) -> None:
+        self._tracker.cleanup(now)
+
+
+class DNSAnyQueryDetector(BaseDetector):
+    """RULE-019: Detects repeated DNS ANY-type queries, used for domain fingerprinting or amplification setup."""
+
+    def __init__(self, rule: Rule) -> None:
+        super().__init__(rule)
+        self._any_qtype = rule.params.get('dns_qtype_any', 255)
+        self._tracker = _RateTracker(rule.time_window)
+
+    def analyze_packet(self, packet_info: Dict[str, Any]) -> List[Dict[str, Any]]:
+        if not packet_info.get('has_dns'):
+            return []
+        if packet_info.get('dns_qr') != 'query':
+            return []
+        if packet_info.get('dns_qtype') != self._any_qtype:
+            return []
+
+        src_ip = packet_info.get('src_ip')
+        if not src_ip:
+            return []
+
+        now = self._now(packet_info)
+        count = self._tracker.add(src_ip, now)
+        self._maybe_cleanup(now)
+
+        if count >= self.rule.threshold and not self._in_cooldown(src_ip, now):
+            self._record_alert(src_ip, now)
+            tw = self.rule.time_window
+            return [self._build_alert(
+                packet_info,
+                f'DNS ANY Query Probe: {count} ANY-type queries in {tw}s from {src_ip}',
+                (f'{src_ip} issued {count} DNS ANY-type queries in {tw} seconds. ANY queries return '
+                 f'the largest possible response and are commonly used to fingerprint a domain or '
+                 f'stage a DNS amplification attack.'),
+                count=count,
+            )]
+        return []
+
+    def reset(self) -> None:
+        super().reset()
+        self._tracker.reset()
+
+    def _cleanup(self, now: float) -> None:
+        self._tracker.cleanup(now)
+
+
+class MACSpoofingDetector(BaseDetector):
+    """RULE-020: Detects a single source MAC address paired with multiple source IPs (ARP/MAC spoofing)."""
+
+    def __init__(self, rule: Rule) -> None:
+        super().__init__(rule)
+        self._tracker = _UniqueSetTracker(rule.time_window)
+
+    def analyze_packet(self, packet_info: Dict[str, Any]) -> List[Dict[str, Any]]:
+        src_mac = packet_info.get('src_mac')
+        src_ip = packet_info.get('src_ip')
+        if not src_mac or not src_ip:
+            return []
+
+        now = self._now(packet_info)
+        unique_ips = self._tracker.add(src_mac, src_ip, now)
+        self._maybe_cleanup(now)
+
+        if unique_ips >= self.rule.threshold and not self._in_cooldown(src_mac, now):
+            self._record_alert(src_mac, now)
+            tw = self.rule.time_window
+            return [self._build_alert(
+                packet_info,
+                f'MAC Spoofing: MAC {src_mac} used {unique_ips} distinct source IPs in {tw}s',
+                (f'MAC address {src_mac} was observed sending traffic from {unique_ips} different '
+                 f'source IP addresses within {tw} seconds. On a normal LAN one MAC maps to one IP, '
+                 f'so rapid switching suggests ARP/MAC spoofing or a man-in-the-middle host.'),
+                count=unique_ips,
+            )]
+        return []
+
+    def reset(self) -> None:
+        super().reset()
+        self._tracker.reset()
+
+    def _cleanup(self, now: float) -> None:
+        self._tracker.cleanup(now)
+
+
+class RSTFloodDetector(BaseDetector):
+    """RULE-024: Detects TCP RST floods (connection-reset DoS or on-path RST injection)."""
+
+    def __init__(self, rule: Rule) -> None:
+        super().__init__(rule)
+        self._tracker = _RateTracker(rule.time_window)
+
+    def analyze_packet(self, packet_info: Dict[str, Any]) -> List[Dict[str, Any]]:
+        if not packet_info.get('has_tcp'):
+            return []
+        flags = packet_info.get('tcp_flags', {})
+        if not flags.get('rst'):
+            return []
+
+        src_ip = packet_info.get('src_ip')
+        if not src_ip:
+            return []
+
+        now = self._now(packet_info)
+        count = self._tracker.add(src_ip, now)
+        self._maybe_cleanup(now)
+
+        if count >= self.rule.threshold and not self._in_cooldown(src_ip, now):
+            self._record_alert(src_ip, now)
+            tw = self.rule.time_window
+            return [self._build_alert(
+                packet_info,
+                f'TCP RST Flood: {count} RST packets in {tw}s from {src_ip}',
+                (f'{src_ip} sent {count} TCP RST packets in {tw} seconds, consistent with a '
+                 f'connection-reset denial-of-service attack or on-path RST injection.'),
+                count=count,
+            )]
+        return []
+
+    def reset(self) -> None:
+        super().reset()
+        self._tracker.reset()
+
+    def _cleanup(self, now: float) -> None:
+        self._tracker.cleanup(now)
+
+
+class IPFragmentationFloodDetector(BaseDetector):
+    """RULE-025: Detects a flood of fragmented IP packets (evasion or teardrop-style DoS)."""
+
+    def __init__(self, rule: Rule) -> None:
+        super().__init__(rule)
+        self._tracker = _RateTracker(rule.time_window)
+
+    def analyze_packet(self, packet_info: Dict[str, Any]) -> List[Dict[str, Any]]:
+        ip_flags = packet_info.get('flags')
+        if not ip_flags:
+            return []
+        try:
+            is_fragment = 'MF' in ip_flags
+        except TypeError:
+            return []
+        if not is_fragment:
+            return []
+
+        src_ip = packet_info.get('src_ip')
+        if not src_ip:
+            return []
+
+        now = self._now(packet_info)
+        count = self._tracker.add(src_ip, now)
+        self._maybe_cleanup(now)
+
+        if count >= self.rule.threshold and not self._in_cooldown(src_ip, now):
+            self._record_alert(src_ip, now)
+            tw = self.rule.time_window
+            return [self._build_alert(
+                packet_info,
+                f'IP Fragmentation Flood: {count} fragmented packets in {tw}s from {src_ip}',
+                (f'{src_ip} sent {count} fragmented IP packets in {tw} seconds. Fragmentation is '
+                 f'commonly used to evade firewalls/IDS or to mount teardrop-style DoS attacks.'),
+                count=count,
+            )]
+        return []
+
+    def reset(self) -> None:
+        super().reset()
+        self._tracker.reset()
+
+    def _cleanup(self, now: float) -> None:
+        self._tracker.cleanup(now)
+
+
+class TCPZeroWindowDetector(BaseDetector):
+    """RULE-026: Detects repeated TCP zero-window advertisements (Sockstress-style resource exhaustion)."""
+
+    def __init__(self, rule: Rule) -> None:
+        super().__init__(rule)
+        self._tracker = _RateTracker(rule.time_window)
+
+    def analyze_packet(self, packet_info: Dict[str, Any]) -> List[Dict[str, Any]]:
+        if not packet_info.get('has_tcp'):
+            return []
+        if packet_info.get('window') != 0:
+            return []
+
+        src_ip = packet_info.get('src_ip')
+        if not src_ip:
+            return []
+
+        now = self._now(packet_info)
+        count = self._tracker.add(src_ip, now)
+        self._maybe_cleanup(now)
+
+        if count >= self.rule.threshold and not self._in_cooldown(src_ip, now):
+            self._record_alert(src_ip, now)
+            tw = self.rule.time_window
+            return [self._build_alert(
+                packet_info,
+                f'TCP Zero-Window DoS: {count} zero-window packets in {tw}s from {src_ip}',
+                (f'{src_ip} sent {count} TCP packets advertising a zero receive window in {tw} seconds. '
+                 f'Sustained zero-window signalling can be used to hold server resources open in a '
+                 f'Sockstress-style resource-exhaustion attack.'),
+                count=count,
+            )]
+        return []
+
+    def reset(self) -> None:
+        super().reset()
+        self._tracker.reset()
+
+    def _cleanup(self, now: float) -> None:
+        self._tracker.cleanup(now)
+
+
+class DNSTunnelingDetector(BaseDetector):
+    """RULE-027: Detects DNS tunneling via abnormally long query names."""
+
+    def __init__(self, rule: Rule) -> None:
+        super().__init__(rule)
+        self._max_qname_length = rule.params.get('max_qname_length', 50)
+        self._tracker = _RateTracker(rule.time_window)
+
+    def analyze_packet(self, packet_info: Dict[str, Any]) -> List[Dict[str, Any]]:
+        if not packet_info.get('has_dns'):
+            return []
+        if packet_info.get('dns_qr') != 'query':
+            return []
+        qname = packet_info.get('dns_query') or ''
+        if len(qname) <= self._max_qname_length:
+            return []
+
+        src_ip = packet_info.get('src_ip')
+        if not src_ip:
+            return []
+
+        now = self._now(packet_info)
+        count = self._tracker.add(src_ip, now)
+        self._maybe_cleanup(now)
+
+        if count >= self.rule.threshold and not self._in_cooldown(src_ip, now):
+            self._record_alert(src_ip, now)
+            tw = self.rule.time_window
+            return [self._build_alert(
+                packet_info,
+                f'DNS Tunneling: {count} oversized DNS query names in {tw}s from {src_ip}',
+                (f'{src_ip} issued {count} DNS queries with names longer than {self._max_qname_length} '
+                 f'characters in {tw} seconds. Abnormally long, high-entropy query names are the '
+                 f'hallmark of DNS tunneling used for data exfiltration or covert command-and-control.'),
+                count=count,
+            )]
+        return []
+
+    def reset(self) -> None:
+        super().reset()
+        self._tracker.reset()
+
+    def _cleanup(self, now: float) -> None:
+        self._tracker.cleanup(now)
+
+
+class MalformedPacketFloodDetector(BaseDetector):
+    """RULE-028: Detects a flood of malformed/unparseable packets from a single source."""
+
+    def __init__(self, rule: Rule) -> None:
+        super().__init__(rule)
+        self._tracker = _RateTracker(rule.time_window)
+
+    def analyze_packet(self, packet_info: Dict[str, Any]) -> List[Dict[str, Any]]:
+        if not packet_info.get('error'):
+            return []
+
+        src_ip = packet_info.get('src_ip')
+        if not src_ip:
+            return []
+
+        now = self._now(packet_info)
+        count = self._tracker.add(src_ip, now)
+        self._maybe_cleanup(now)
+
+        if count >= self.rule.threshold and not self._in_cooldown(src_ip, now):
+            self._record_alert(src_ip, now)
+            tw = self.rule.time_window
+            return [self._build_alert(
+                packet_info,
+                f'Malformed Packet Flood: {count} unparseable packets in {tw}s from {src_ip}',
+                (f'{src_ip} sent {count} malformed or unparseable packets in {tw} seconds, potentially '
+                 f'protocol fuzzing or an attempt to evade signature-based detection.'),
+                count=count,
+            )]
+        return []
+
+    def reset(self) -> None:
+        super().reset()
+        self._tracker.reset()
+
+    def _cleanup(self, now: float) -> None:
+        self._tracker.cleanup(now)
+
+
+class ICMPTimestampProbeDetector(BaseDetector):
+    """RULE-029: Detects ICMP timestamp request probes used for OS fingerprinting/host discovery."""
+
+    def __init__(self, rule: Rule) -> None:
+        super().__init__(rule)
+        self._tracker = _RateTracker(rule.time_window)
+
+    def analyze_packet(self, packet_info: Dict[str, Any]) -> List[Dict[str, Any]]:
+        if not packet_info.get('has_icmp'):
+            return []
+        if packet_info.get('icmp_type') != 13:  # timestamp request
+            return []
+
+        src_ip = packet_info.get('src_ip')
+        if not src_ip:
+            return []
+
+        now = self._now(packet_info)
+        count = self._tracker.add(src_ip, now)
+        self._maybe_cleanup(now)
+
+        if count >= self.rule.threshold and not self._in_cooldown(src_ip, now):
+            self._record_alert(src_ip, now)
+            tw = self.rule.time_window
+            return [self._build_alert(
+                packet_info,
+                f'ICMP Timestamp Probe: {count} timestamp requests in {tw}s from {src_ip}',
+                (f'{src_ip} sent {count} ICMP timestamp requests in {tw} seconds. These probes are '
+                 f'used for OS fingerprinting and host-discovery reconnaissance.'),
+                count=count,
+            )]
+        return []
+
+    def reset(self) -> None:
+        super().reset()
+        self._tracker.reset()
+
+    def _cleanup(self, now: float) -> None:
+        self._tracker.cleanup(now)
+
+
+class ICMPUnreachableFloodDetector(BaseDetector):
+    """RULE-030: Detects a flood of ICMP destination-unreachable messages (DoS backscatter or network mapping)."""
+
+    def __init__(self, rule: Rule) -> None:
+        super().__init__(rule)
+        self._tracker = _RateTracker(rule.time_window)
+
+    def analyze_packet(self, packet_info: Dict[str, Any]) -> List[Dict[str, Any]]:
+        if not packet_info.get('has_icmp'):
+            return []
+        if packet_info.get('icmp_type') != 3:  # destination unreachable
+            return []
+
+        src_ip = packet_info.get('src_ip')
+        if not src_ip:
+            return []
+
+        now = self._now(packet_info)
+        count = self._tracker.add(src_ip, now)
+        self._maybe_cleanup(now)
+
+        if count >= self.rule.threshold and not self._in_cooldown(src_ip, now):
+            self._record_alert(src_ip, now)
+            tw = self.rule.time_window
+            return [self._build_alert(
+                packet_info,
+                f'ICMP Destination Unreachable Flood: {count} messages in {tw}s from {src_ip}',
+                (f'{src_ip} sent {count} ICMP destination-unreachable messages in {tw} seconds, '
+                 f'consistent with DoS backscatter from a spoofed attack or aggressive network mapping.'),
+                count=count,
+            )]
+        return []
+
+    def reset(self) -> None:
+        super().reset()
+        self._tracker.reset()
+
+    def _cleanup(self, now: float) -> None:
+        self._tracker.cleanup(now)
+
+
 class ICMPLargePayloadDetector(BaseDetector):
     """RULE-013: Detects Ping-of-Death style oversized ICMP payloads."""
 
