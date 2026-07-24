@@ -39,7 +39,7 @@ rules = default_rules()
 print(f"  ✓ {len(rules)} built-in rules loaded")
 for r in rules:
     print(f"    {r.rule_id}  [{r.severity:<8}]  {r.name}")
-assert len(rules) == 13, f"Expected 13 rules, got {len(rules)}"
+assert len(rules) == 30, f"Expected 30 rules, got {len(rules)}"
 
 # ---------------------------------------------------------------------------
 # Test 3: Engine initialisation
@@ -49,7 +49,7 @@ engine_default = RuleEngine()
 stats = engine_default.get_stats()
 print(f"  ✓ Engine created with {stats['active_detectors']} active detectors")
 print(f"  ✓ get_rules() returns {len(engine_default.get_rules())} rules")
-assert stats['active_detectors'] == 13
+assert stats['active_detectors'] == 30
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -57,7 +57,8 @@ assert stats['active_detectors'] == 13
 
 def make_packet(proto='TCP', src_ip='192.168.1.100', dst_ip='10.0.0.1',
                 src_port=50000, dst_port=80, flags=None, payload_len=0,
-                icmp_type=None, dns_qr=None, ts=None):
+                icmp_type=None, dns_qr=None, dns_qtype=None, dns_query=None,
+                src_mac=None, window=None, ip_flags=None, error=None, ts=None):
     """Build a minimal packet_info dict that matches PacketProcessor output."""
     pkt = {
         'timestamp': ts or time.time(),
@@ -73,7 +74,13 @@ def make_packet(proto='TCP', src_ip='192.168.1.100', dst_ip='10.0.0.1',
         'has_icmp': proto == 'ICMP',
         'has_dns':  dns_qr is not None,
         'dns_qr':   dns_qr,
+        'dns_qtype': dns_qtype,
+        'dns_query': dns_query,
         'icmp_type': icmp_type,
+        'src_mac': src_mac,
+        'window': window,
+        'flags': ip_flags,
+        'error': error,
         'tcp_flags': {
             'syn': False, 'ack': False, 'rst': False, 'fin': False,
             'psh': False, 'urg': False, 'ece': False, 'cwr': False,
@@ -110,6 +117,23 @@ LOW_T_RULES = [
     Rule('RULE-011', 'TCP XMAS Scan',     'PortScan-XMASScan',       'medium',   '-', threshold=3, time_window=10, cooldown=2),
     Rule('RULE-012', 'TCP FIN Scan',      'PortScan-FINScan',        'low',      '-', threshold=3, time_window=10, cooldown=2),
     Rule('RULE-013', 'Ping of Death',     'DoS-PingOfDeath',         'high',     '-', threshold=1, time_window=60, cooldown=5, params={'max_safe_icmp_payload': 1472}),
+    Rule('RULE-014', 'TCP SYN-FIN Scan',  'PortScan-SYNFINScan',     'medium',   '-', threshold=3, time_window=10, cooldown=2),
+    Rule('RULE-015', 'TCP ACK Scan',      'PortScan-ACKScan',        'low',      '-', threshold=3, time_window=15, cooldown=2),
+    Rule('RULE-016', 'ICMP Smurf Attack', 'DDoS-Smurf',              'high',     '-', threshold=3, time_window=10, cooldown=2),
+    Rule('RULE-017', 'ICMP Redirect Attack', 'MITM-ICMPRedirect',    'medium',   '-', threshold=3, time_window=60, cooldown=5),
+    Rule('RULE-018', 'DNS Query Flood',   'DoS-DNS-QueryFlood',      'medium',   '-', threshold=5, time_window=10, cooldown=2),
+    Rule('RULE-019', 'DNS ANY Query Probe', 'Reconnaissance-DNSAnyQuery', 'medium', '-', threshold=3, time_window=30, cooldown=2, params={'dns_qtype_any': 255}),
+    Rule('RULE-020', 'MAC Address Spoofing', 'MITM-MACSpoofing',     'high',     '-', threshold=3, time_window=30, cooldown=5),
+    Rule('RULE-021', 'Telnet Brute Force', 'Bruteforce-Telnet',      'medium',   '-', threshold=3, time_window=30, cooldown=2, params={'target_port': 23}),
+    Rule('RULE-022', 'SMB Brute Force',   'Bruteforce-SMB',          'high',     '-', threshold=3, time_window=30, cooldown=2, params={'target_port': 445}),
+    Rule('RULE-023', 'VNC Brute Force',   'Bruteforce-VNC',          'high',     '-', threshold=3, time_window=30, cooldown=2, params={'target_port': 5900}),
+    Rule('RULE-024', 'TCP RST Flood',     'DoS-RSTFlood',            'medium',   '-', threshold=5, time_window=10, cooldown=2),
+    Rule('RULE-025', 'IP Fragmentation Flood', 'DoS-IPFragmentation', 'medium',  '-', threshold=3, time_window=10, cooldown=2),
+    Rule('RULE-026', 'TCP Zero-Window DoS', 'DoS-TCPZeroWindow',     'medium',   '-', threshold=3, time_window=15, cooldown=2),
+    Rule('RULE-027', 'DNS Tunneling',     'Exfiltration-DNSTunneling', 'high',   '-', threshold=3, time_window=30, cooldown=2, params={'max_qname_length': 20}),
+    Rule('RULE-028', 'Malformed Packet Flood', 'Evasion-MalformedPackets', 'low', '-', threshold=3, time_window=10, cooldown=2),
+    Rule('RULE-029', 'ICMP Timestamp Probe', 'Reconnaissance-ICMPTimestamp', 'low', '-', threshold=3, time_window=20, cooldown=2),
+    Rule('RULE-030', 'ICMP Destination Unreachable Flood', 'DoS-ICMPUnreachableFlood', 'medium', '-', threshold=3, time_window=10, cooldown=2),
 ]
 
 # ---------------------------------------------------------------------------
@@ -220,6 +244,132 @@ fire_test('RULE-013 ignores ICMP within safe payload limit',
           [make_packet('ICMP', payload_len=64) for _ in range(5)],
           expect=False)
 
+# RULE-014: SYN-FIN Scan — both flags set
+fire_test('RULE-014 TCP SYN-FIN Scan fires on SYN+FIN packets',
+          [make_packet('TCP', flags={'syn': True, 'fin': True}) for _ in range(3)])
+
+# RULE-014: Plain SYN must not trigger the SYN-FIN rule (kept below the RULE-001 SYN flood threshold)
+fire_test('RULE-014 ignores plain SYN (no FIN)',
+          [make_packet('TCP', flags={'syn': True}) for _ in range(4)],
+          expect=False)
+
+# RULE-015: ACK Scan — bare ACKs to unique ports
+fire_test('RULE-015 TCP ACK Scan fires on bare ACKs to 3 unique ports',
+          [make_packet('TCP', flags={'ack': True}, dst_port=p) for p in [21, 22, 23]])
+
+# RULE-015: ACK that is part of a real connection (PSH+ACK) must not count
+fire_test('RULE-015 ignores PSH+ACK data packets',
+          [make_packet('TCP', flags={'ack': True, 'psh': True}, dst_port=p) for p in [21, 22, 23]],
+          expect=False)
+
+# RULE-016: ICMP Smurf — echo requests to broadcast address
+fire_test('RULE-016 ICMP Smurf fires on echo requests to broadcast address',
+          [make_packet('ICMP', dst_ip='192.168.1.255', icmp_type=8) for _ in range(3)])
+
+# RULE-016: Echo requests to a normal host must not alert (kept below the RULE-003 ICMP flood threshold)
+fire_test('RULE-016 ignores echo requests to non-broadcast address',
+          [make_packet('ICMP', dst_ip='192.168.1.50', icmp_type=8) for _ in range(4)],
+          expect=False)
+
+# RULE-017: ICMP Redirect
+fire_test('RULE-017 ICMP Redirect fires on redirect messages',
+          [make_packet('ICMP', icmp_type=5) for _ in range(3)])
+
+# RULE-018: DNS Query Flood
+fire_test('RULE-018 DNS Query Flood fires on repeated queries',
+          [make_packet('UDP', src_port=40000, dst_port=53, dns_qr='query') for _ in range(5)])
+
+# RULE-018: DNS responses must not count toward the query flood (kept below the RULE-004 UDP flood threshold)
+fire_test('RULE-018 ignores DNS responses',
+          [make_packet('UDP', src_port=53, dst_port=40000, dns_qr='response') for _ in range(4)],
+          expect=False)
+
+# RULE-019: DNS ANY Query Probe
+fire_test('RULE-019 DNS ANY Query fires on repeated ANY queries',
+          [make_packet('UDP', src_port=40000, dst_port=53, dns_qr='query', dns_qtype=255) for _ in range(3)])
+
+# RULE-019: Non-ANY queries must not alert (kept below the RULE-004/RULE-018 flood thresholds)
+fire_test('RULE-019 ignores non-ANY query types',
+          [make_packet('UDP', src_port=40000, dst_port=53, dns_qr='query', dns_qtype=1) for _ in range(4)],
+          expect=False)
+
+# RULE-020: MAC Address Spoofing — one MAC, many source IPs
+fire_test('RULE-020 MAC Spoofing fires on one MAC with 3 different source IPs',
+          [make_packet('TCP', src_ip=f'192.168.1.{i}', src_mac='AA:BB:CC:DD:EE:FF') for i in range(1, 4)])
+
+# RULE-020: Same MAC with a single stable IP must not alert (bare ACKs to one port avoid the NULL-scan rule)
+fire_test('RULE-020 ignores stable MAC-to-IP pairing',
+          [make_packet('TCP', src_ip='192.168.1.100', src_mac='11:22:33:44:55:66', flags={'ack': True})
+           for _ in range(10)],
+          expect=False)
+
+# RULE-021: Telnet Brute Force
+fire_test('RULE-021 Telnet Brute Force fires on repeated SYNs to port 23',
+          [make_packet('TCP', flags={'syn': True}, dst_port=23) for _ in range(3)])
+
+# RULE-022: SMB Brute Force
+fire_test('RULE-022 SMB Brute Force fires on repeated SYNs to port 445',
+          [make_packet('TCP', flags={'syn': True}, dst_port=445) for _ in range(3)])
+
+# RULE-023: VNC Brute Force
+fire_test('RULE-023 VNC Brute Force fires on repeated SYNs to port 5900',
+          [make_packet('TCP', flags={'syn': True}, dst_port=5900) for _ in range(3)])
+
+# RULE-024: TCP RST Flood
+fire_test('RULE-024 TCP RST Flood fires on 5 RST packets',
+          [make_packet('TCP', flags={'rst': True}) for _ in range(5)])
+
+# RULE-024: A couple of RST packets (below threshold) must not alert
+fire_test('RULE-024 ignores a few RST packets below threshold',
+          [make_packet('TCP', flags={'rst': True}) for _ in range(3)],
+          expect=False)
+
+# RULE-025: IP Fragmentation Flood — fragmented (MF-flagged) UDP packets
+fire_test('RULE-025 IP Fragmentation Flood fires on 3 fragmented packets',
+          [make_packet('UDP', ip_flags=['MF']) for _ in range(3)])
+
+# RULE-025: Non-fragmented UDP packets must not alert (kept below the RULE-004 UDP flood threshold)
+fire_test('RULE-025 ignores non-fragmented packets',
+          [make_packet('UDP') for _ in range(4)],
+          expect=False)
+
+# RULE-026: TCP Zero-Window DoS
+fire_test('RULE-026 TCP Zero-Window fires on 3 zero-window packets',
+          [make_packet('TCP', window=0) for _ in range(3)])
+
+# RULE-026: Normal window size must not alert (bare ACK to one port avoids other scan rules)
+fire_test('RULE-026 ignores non-zero window packets',
+          [make_packet('TCP', window=65535, flags={'ack': True}) for _ in range(5)],
+          expect=False)
+
+# RULE-027: DNS Tunneling — oversized query names
+fire_test('RULE-027 DNS Tunneling fires on oversized query names',
+          [make_packet('UDP', src_port=40000, dst_port=53, dns_qr='query',
+                       dns_query='a' * 30 + '.tunnel.example.com') for _ in range(3)])
+
+# RULE-027: Short query names must not alert (kept below the RULE-018 DNS query flood threshold)
+fire_test('RULE-027 ignores normal-length query names',
+          [make_packet('UDP', src_port=40000, dst_port=53, dns_qr='query',
+                       dns_query='short.example.com') for _ in range(4)],
+          expect=False)
+
+# RULE-028: Malformed Packet Flood
+fire_test('RULE-028 Malformed Packet Flood fires on 3 unparseable packets',
+          [make_packet('TCP', error='truncated header') for _ in range(3)])
+
+# RULE-028: Cleanly parsed packets must not alert (bare ACK to one port avoids other scan rules)
+fire_test('RULE-028 ignores cleanly parsed packets',
+          [make_packet('TCP', flags={'ack': True}) for _ in range(5)],
+          expect=False)
+
+# RULE-029: ICMP Timestamp Probe
+fire_test('RULE-029 ICMP Timestamp Probe fires on 3 timestamp requests',
+          [make_packet('ICMP', icmp_type=13) for _ in range(3)])
+
+# RULE-030: ICMP Destination Unreachable Flood
+fire_test('RULE-030 ICMP Destination Unreachable Flood fires on 3 unreachable messages',
+          [make_packet('ICMP', icmp_type=3) for _ in range(3)])
+
 print(f"\n  Detector tests: {passed}/{total} passed")
 
 # ---------------------------------------------------------------------------
@@ -305,7 +455,7 @@ for _ in range(5):
 s = eng3.get_stats()
 check(f'packets_analyzed == 5 (got {s["packets_analyzed"]})',   s['packets_analyzed'] == 5)
 check(f'alerts_generated >= 1 (got {s["alerts_generated"]})',   s['alerts_generated'] >= 1)
-check(f'active_detectors == 13 (got {s["active_detectors"]})', s['active_detectors'] == 13)
+check(f'active_detectors == 30 (got {s["active_detectors"]})', s['active_detectors'] == 30)
 
 eng3.reset()
 s2 = eng3.get_stats()
