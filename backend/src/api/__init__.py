@@ -5,7 +5,7 @@ This module provides REST API endpoints and WebSocket support
 for the frontend dashboard.
 """
 
-from .app import app, socketio, start_api
+from .app import app, start_api
 from .websocket import emit_new_alert, emit_system_status
 
 __all__ = [

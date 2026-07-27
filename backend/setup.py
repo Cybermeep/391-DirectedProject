@@ -25,6 +25,8 @@ setup(
         "python-dotenv>=1.0.0",
         "requests>=2.31.0",
         "click>=8.1.0",
+        "PyJWT>=2.8.0",
+        "google-auth>=2.29.0",
     ],
     python_requires=">=3.8",
 )

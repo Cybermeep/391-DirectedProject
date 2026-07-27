@@ -5,13 +5,18 @@ This module provides REST endpoints for retrieving, creating, and
 managing alerts.
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response
 import logging
+import csv
+import io
 from datetime import datetime
+from explainability import ExplanationGenerator
+
 
 # Use absolute imports instead of relative
 from alert_management import AlertStore, SeverityScorer, AlertDeduplicator
 from api.websocket import emit_new_alert
+from api.middleware.auth import token_required, tier_required
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +51,82 @@ def get_alerts():
     except Exception as e:
         logger.error(f"Error getting alerts: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@bp.route('/timeline', methods=['GET'])
+def get_alert_timeline():
+    """
+    Alert correlation view: recent alerts grouped by source IP, so a
+    sequence of related activity from one attacker reads as a timeline
+    instead of scattered unrelated rows in the main alert log.
+
+    Query parameters:
+        - hours (int): how far back to look (default: 24)
+        - min_group_size (int): only include sources with at least this
+          many alerts (default: 2 - a single isolated alert isn't a
+          "correlation")
+    """
+    try:
+        hours = request.args.get('hours', 24, type=int)
+        min_group_size = request.args.get('min_group_size', 2, type=int)
+
+        store = AlertStore()
+        groups = store.get_correlated_alerts(hours=hours, min_group_size=min_group_size)
+        return jsonify({'success': True, 'groups': groups})
+
+    except Exception as e:
+        logger.error(f"Error getting alert timeline: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@bp.route('/export', methods=['GET'])
+@token_required
+@tier_required('export_data')
+def export_alerts():
+    """
+    Export alerts as CSV. Pro/Enterprise feature (see appconfig.TIER_LIMITS).
+
+    Query parameters:
+        - days (int): How many days back to include (default: 30)
+        - status (str): Filter by status (optional)
+        - severity (str): Filter by severity (optional)
+    """
+    try:
+        from datetime import timedelta
+
+        days = request.args.get('days', 30, type=int)
+        severity = request.args.get('severity', None)
+        status = request.args.get('status', None)
+        since = datetime.utcnow() - timedelta(days=days)
+
+        store = AlertStore()
+        alerts = store.get_alerts(limit=100000, offset=0, severity=severity, status=status, since=since)
+
+        buffer = io.StringIO()
+        writer = csv.writer(buffer)
+        writer.writerow([
+            'alert_id', 'timestamp', 'severity', 'attack_type', 'source_ip', 'source_port',
+            'dest_ip', 'dest_port', 'protocol', 'message', 'explanation', 'ml_confidence',
+            'rule_id', 'count_occurrences', 'status',
+        ])
+        for alert in alerts:
+            writer.writerow([
+                alert.alert_id, alert.timestamp.isoformat() if alert.timestamp else '',
+                alert.severity, alert.attack_type, alert.source_ip, alert.source_port,
+                alert.dest_ip, alert.dest_port, alert.protocol, alert.message, alert.explanation,
+                alert.ml_confidence, alert.rule_id, alert.count_occurrences, alert.status,
+            ])
+
+        filename = f"nids-alerts-{datetime.utcnow().strftime('%Y%m%d')}.csv"
+        return Response(
+            buffer.getvalue(),
+            mimetype='text/csv',
+            headers={'Content-Disposition': f'attachment; filename={filename}'},
+        )
+
+    except Exception as e:
+        logger.error(f"Error exporting alerts: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @bp.route('/<alert_id>', methods=['GET'])
 def get_alert(alert_id):
@@ -171,4 +252,59 @@ def get_alert_stats():
         
     except Exception as e:
         logger.error(f"Error getting alert stats: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@bp.route('/<alert_id>/explain', methods=['GET'])
+def explain_alert(alert_id):
+    """
+    Get a human-readable explanation for an alert.
+    
+    Query Parameters:
+        - detailed (bool): Whether to return detailed explanation (default: False)
+    """
+    try:
+        # Get the alert
+        store = AlertStore()
+        alert = store.get_alert_by_id(alert_id)
+        
+        if not alert:
+            return jsonify({'success': False, 'error': 'Alert not found'}), 404
+        
+        # Get detailed flag
+        detailed = request.args.get('detailed', 'false').lower() == 'true'
+        
+        # Prepare alert data
+        alert_data = alert.to_dict()
+        
+        # Generate feature importances (simulated for now - will be real when model is trained)
+        # In production, this would come from the model's feature_importances_
+        feature_importances = {
+            'SYN_Flag_Cnt': 0.85,
+            'RST_Flag_Cnt': 0.72,
+            'Flow_IAT_Mean': 0.65,
+            'Tot_Fwd_Pkts': 0.58,
+            'ACK_Flag_Cnt': 0.45,
+            'Flow_Pkts/s': 0.42,
+            'Tot_Bwd_Pkts': 0.38,
+            'Fwd_Pkt_Len_Mean': 0.35
+        }
+        
+        # Generate explanation
+        generator = ExplanationGenerator(max_features=5)
+        
+        if detailed:
+            explanation = generator.generate_detailed_explanation(alert_data, feature_importances)
+            return jsonify({
+                'success': True,
+                'explanation': explanation
+            })
+        else:
+            explanation = generator.generate_explanation(alert_data, feature_importances)
+            return jsonify({
+                'success': True,
+                'explanation': explanation
+            })
+        
+    except Exception as e:
+        logger.error(f"Error generating explanation for alert {alert_id}: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500

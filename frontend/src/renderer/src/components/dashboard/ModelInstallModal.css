@@ -1,0 +1,53 @@
+.model-install-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 380px;
+  max-width: 90vw;
+  padding: 28px 24px;
+  text-align: center;
+  box-shadow: 0 12px 32px var(--shadow);
+}
+
+.model-install-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+
+.model-install-icon.spinning {
+  animation: spin 1.5s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.model-install-card h3 {
+  font-size: 17px;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.model-install-card p {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+
+.model-install-hint {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.model-install-skip {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  margin-top: 10px;
+  text-decoration: underline;
+}

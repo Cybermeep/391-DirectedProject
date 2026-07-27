@@ -1,0 +1,142 @@
+# Feature lookup table for explainability
+# Maps technical feature names to human-readable descriptions
+
+feature_descriptions:
+  # Flow duration features
+  Flow_Duration: "duration of the network flow"
+  Flow_Byts/s: "bytes transferred per second"
+  Flow_Pkts/s: "packets transferred per second"
+  
+  # Packet count features
+  Tot_Fwd_Pkts: "number of forward packets"
+  Tot_Bwd_Pkts: "number of backward packets"
+  TotLen_Fwd_Pkts: "total bytes in forward direction"
+  TotLen_Bwd_Pkts: "total bytes in backward direction"
+  
+  # Packet length features
+  Fwd_Pkt_Len_Max: "maximum forward packet size"
+  Fwd_Pkt_Len_Min: "minimum forward packet size"
+  Fwd_Pkt_Len_Mean: "average forward packet size"
+  Fwd_Pkt_Len_Std: "forward packet size variation"
+  Bwd_Pkt_Len_Max: "maximum backward packet size"
+  Bwd_Pkt_Len_Mean: "average backward packet size"
+  
+  # Inter-arrival time features
+  Flow_IAT_Mean: "average time between packets"
+  Flow_IAT_Std: "variation in packet timing"
+  Flow_IAT_Max: "maximum gap between packets"
+  Flow_IAT_Min: "minimum gap between packets"
+  Fwd_IAT_Tot: "total time between forward packets"
+  Fwd_IAT_Mean: "average time between forward packets"
+  
+  # TCP flag features
+  SYN_Flag_Cnt: "number of SYN packets (connection requests)"
+  RST_Flag_Cnt: "number of RST packets (connection resets)"
+  FIN_Flag_Cnt: "number of FIN packets (connection closes)"
+  ACK_Flag_Cnt: "number of ACK packets (acknowledgments)"
+  PSH_Flag_Cnt: "number of PSH packets (push flags)"
+  URG_Flag_Cnt: "number of URG packets (urgent flags)"
+  CWE_Flag_Count: "number of CWE packets"
+  ECE_Flag_Cnt: "number of ECE packets"
+  
+  # Header features
+  Fwd_Header_Len: "forward header length"
+  Bwd_Header_Len: "backward header length"
+  
+  # Packet rate features
+  Fwd_Pkts/s: "forward packets per second"
+  Bwd_Pkts/s: "backward packets per second"
+  
+  # Subflow features
+  Subflow_Fwd_Pkts: "forward packets in subflow"
+  Subflow_Bwd_Pkts: "backward packets in subflow"
+  Subflow_Fwd_Byts: "forward bytes in subflow"
+  Subflow_Bwd_Byts: "backward bytes in subflow"
+  
+  # Window features
+  Init_Fwd_Win_Byts: "initial forward window size"
+  Init_Bwd_Win_Byts: "initial backward window size"
+  
+  # Active/Idle features
+  Active_Mean: "average active time"
+  Active_Std: "active time variation"
+  Idle_Mean: "average idle time"
+  Idle_Std: "idle time variation"
+
+attack_indicators:
+  # What each feature value indicates about attacks
+  indicators:
+    - feature: "SYN_Flag_Cnt"
+      high: "high number of SYN packets suggests SYN flood attack or port scan"
+      low: "low SYN count indicates normal connection establishment"
+    
+    - feature: "RST_Flag_Cnt"
+      high: "high number of RST packets suggests connection resets or scanning"
+      low: "normal connection behavior"
+    
+    - feature: "Flow_Pkts/s"
+      high: "high packet rate indicates potential DoS or DDoS attack"
+      low: "normal traffic rate"
+    
+    - feature: "Flow_Byts/s"
+      high: "high bandwidth usage suggests data exfiltration or DoS"
+      low: "normal bandwidth usage"
+    
+    - feature: "Fwd_Pkt_Len_Mean"
+      high: "large packet sizes may indicate data transfer"
+      low: "small packets may indicate scanning or control traffic"
+    
+    - feature: "Flow_IAT_Mean"
+      high: "large gaps between packets may indicate scanning"
+      low: "small gaps suggest burst traffic or DoS"
+    
+    - feature: "Tot_Fwd_Pkts"
+      high: "many forward packets suggests data exfiltration or DoS"
+      low: "normal forward traffic"
+    
+    - feature: "Tot_Bwd_Pkts"
+      high: "many backward packets suggests response to attack"
+      low: "normal response traffic"
+
+attack_patterns:
+  # Combined patterns for different attack types
+  patterns:
+    PortScan:
+      description: "Port scanning detected - attacker probing for open ports"
+      key_features:
+        - "SYN_Flag_Cnt"
+        - "RST_Flag_Cnt"
+        - "Flow_IAT_Mean"
+      explanation: "Multiple connection attempts to different ports with SYN/RST patterns"
+    
+    DDoS:
+      description: "Distributed Denial of Service attack detected"
+      key_features:
+        - "Flow_Pkts/s"
+        - "Flow_Byts/s"
+        - "Tot_Fwd_Pkts"
+      explanation: "High volume of traffic from multiple sources overwhelming the target"
+    
+    DoS:
+      description: "Denial of Service attack detected"
+      key_features:
+        - "Flow_Pkts/s"
+        - "SYN_Flag_Cnt"
+        - "Flow_IAT_Mean"
+      explanation: "Single source flooding target with excessive traffic"
+    
+    Bruteforce:
+      description: "Brute force attack detected - multiple login attempts"
+      key_features:
+        - "Tot_Fwd_Pkts"
+        - "Tot_Bwd_Pkts"
+        - "SYN_Flag_Cnt"
+      explanation: "Repeated authentication attempts with small packet sizes"
+    
+    Botnet:
+      description: "Botnet activity detected - C2 communication"
+      key_features:
+        - "Flow_Byts/s"
+        - "Flow_IAT_Mean"
+        - "Idle_Mean"
+      explanation: "Periodic communication patterns typical of botnet C2 channels"

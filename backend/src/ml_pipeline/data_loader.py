@@ -200,11 +200,6 @@ class DataLoader:
             
         Returns:
             pd.DataFrame: DataFrame with missing values handled
-            
-        Note:
-            - Removes columns with > 50% missing values
-            - Fills remaining missing values with median for numerical columns
-            - Fills categorical with mode
         """
         df_processed = df.copy()
         
@@ -222,7 +217,6 @@ class DataLoader:
         
         if high_missing_cols:
             logger.info(f"Removing columns with >50% missing: {len(high_missing_cols)} columns")
-            logger.debug(f"Columns removed: {high_missing_cols}")
             df_processed = df_processed.drop(columns=high_missing_cols)
         
         # Fill remaining missing values
@@ -245,7 +239,7 @@ class DataLoader:
     
     def balance_dataset(self, df: pd.DataFrame, method: str = 'downsample') -> pd.DataFrame:
         """
-        Balance the dataset by downsampling benign traffic.
+        Balance the dataset by downsampling the majority class.
         
         Args:
             df (pd.DataFrame): DataFrame with Label_Binary column
@@ -253,10 +247,6 @@ class DataLoader:
             
         Returns:
             pd.DataFrame: Balanced DataFrame
-            
-        Note:
-            - Downsampling: Reduces benign samples to match attack count
-            - Oversampling: Increases attack samples to match benign count (not implemented)
         """
         if 'Label_Binary' not in df.columns:
             raise ValueError("DataFrame must contain 'Label_Binary' column")
@@ -265,17 +255,26 @@ class DataLoader:
         benign = df[df['Label_Binary'] == 'Benign']
         attack = df[df['Label_Binary'] == 'Attack']
         
-        if len(attack) == 0:
-            logger.warning("No attack samples found in dataset")
+        if len(attack) == 0 or len(benign) == 0:
+            logger.warning("Only one class found in dataset")
             return df
         
         if method == 'downsample':
-            # Downsample benign to match attack count
-            benign_downsampled = benign.sample(n=len(attack), random_state=42)
-            balanced_df = pd.concat([benign_downsampled, attack], ignore_index=True)
+            # Determine which class is the majority
+            if len(attack) > len(benign):
+                # Attack is majority, downsample attack to match benign
+                logger.info(f"Downsampling Attack from {len(attack)} to {len(benign)} to match Benign")
+                attack_downsampled = attack.sample(n=len(benign), random_state=42)
+                balanced_df = pd.concat([benign, attack_downsampled], ignore_index=True)
+            else:
+                # Benign is majority, downsample benign to match attack
+                logger.info(f"Downsampling Benign from {len(benign)} to {len(attack)} to match Attack")
+                benign_downsampled = benign.sample(n=len(attack), random_state=42)
+                balanced_df = pd.concat([benign_downsampled, attack], ignore_index=True)
             
-            logger.info(f"Balanced dataset: Benign={len(benign_downsampled)}, Attack={len(attack)}")
-            
+            logger.info(f"Balanced dataset: Benign={len(balanced_df[balanced_df['Label_Binary']=='Benign'])}, "
+                       f"Attack={len(balanced_df[balanced_df['Label_Binary']=='Attack'])}")
+                
         elif method == 'oversample':
             # TODO: Implement oversampling (e.g., SMOTE)
             logger.warning("Oversampling not implemented, using original dataset")

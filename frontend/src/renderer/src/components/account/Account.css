@@ -1,0 +1,74 @@
+.account-page {
+  padding: 32px;
+  max-width: 560px;
+  margin: 0 auto;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.account-page h2 {
+  font-size: 20px;
+  color: var(--text);
+  margin-bottom: 20px;
+}
+
+.account-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+
+.account-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--text);
+}
+
+.account-row:last-child {
+  border-bottom: none;
+}
+
+.account-label {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.theme-toggle-btn {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+.theme-toggle-btn:hover {
+  border-color: var(--accent);
+}
+
+.account-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.logout-btn-full {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--danger);
+  border-radius: 8px;
+  padding: 11px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.logout-btn-full:hover {
+  border-color: var(--danger);
+}

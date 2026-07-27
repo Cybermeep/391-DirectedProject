@@ -9,14 +9,14 @@ import uuid
 from typing import Optional, List, Dict, Any
 import logging
 
-from .models import Alert, get_session
+from .models import Alert, get_session, _DEFAULT_DB_PATH
 
 logger = logging.getLogger(__name__)
 
 class AlertStore:
     """Handles storage and retrieval of alerts."""
     
-    def __init__(self, db_path='data/alerts.db'):
+    def __init__(self, db_path=_DEFAULT_DB_PATH):
         """
         Initialize the alert store.
         
@@ -27,10 +27,10 @@ class AlertStore:
         self.session = None
         logger.info(f"AlertStore initialized with db: {db_path}")
     
-    def create_alert(self, alert_data: Dict[str, Any]) -> Alert:
+    def create_alert(self, alert_data: Dict[str, Any], dedup_window_seconds: int = 30) -> Alert:
         """
-        Create a new alert in the database.
-        
+        Create a new alert in the database, or bump an existing one.
+
         Args:
             alert_data (Dict): Alert data including:
                 - severity (str): low, medium, high, critical
@@ -44,13 +44,48 @@ class AlertStore:
                 - explanation (str): Human-readable explanation
                 - ml_confidence (float): ML confidence score (0-1)
                 - rule_id (str): Rule ID if rule-based
-                
+            dedup_window_seconds (int): If an active alert with the same
+                attack_type + dest_port + rule_id was last seen within
+                this many seconds, bump its count_occurrences/last_seen
+                instead of inserting a new row. This is what stops a
+                single sustained flood (which completes many short flows)
+                from creating dozens of near-identical alerts.
+
         Returns:
-            Alert: Created alert object
+            Alert: Created (or bumped) alert object
         """
+        from datetime import timedelta
+
         session = get_session(self.db_path)
-        
+
         try:
+            cutoff = datetime.utcnow() - timedelta(seconds=dedup_window_seconds)
+            existing = (
+                session.query(Alert)
+                .filter(
+                    Alert.attack_type == alert_data.get('attack_type', 'unknown'),
+                    Alert.source_ip == alert_data.get('source_ip'),
+                    Alert.dest_ip == alert_data.get('dest_ip'),
+                    Alert.dest_port == alert_data.get('dest_port'),
+                    Alert.rule_id == alert_data.get('rule_id'),
+                    Alert.status == 'active',
+                    Alert.last_seen >= cutoff,
+                )
+                .order_by(Alert.last_seen.desc())
+                .first()
+            )
+
+            if existing:
+                existing.count_occurrences = (existing.count_occurrences or 1) + 1
+                existing.last_seen = datetime.utcnow()
+                # Keep the highest confidence/severity seen for this burst.
+                if (alert_data.get('ml_confidence') or 0) > (existing.ml_confidence or 0):
+                    existing.ml_confidence = alert_data.get('ml_confidence')
+                session.commit()
+                session.refresh(existing)
+                logger.info(f"Alert deduplicated: {existing.alert_id} (now x{existing.count_occurrences})")
+                return existing
+
             alert = Alert(
                 alert_id=str(uuid.uuid4())[:8],
                 timestamp=datetime.utcnow(),
@@ -85,7 +120,8 @@ class AlertStore:
     
     def get_alerts(self, limit: int = 100, offset: int = 0,
                    severity: Optional[str] = None,
-                   status: Optional[str] = None) -> List[Alert]:
+                   status: Optional[str] = None,
+                   since: Optional[datetime] = None) -> List[Alert]:
         """
         Retrieve alerts with optional filters.
         
@@ -94,6 +130,7 @@ class AlertStore:
             offset (int): Number of alerts to skip
             severity (str, optional): Filter by severity
             status (str, optional): Filter by status
+            since (datetime, optional): Only alerts at or after this timestamp
             
         Returns:
             List[Alert]: List of alert objects
@@ -107,6 +144,8 @@ class AlertStore:
                 query = query.filter(Alert.severity == severity)
             if status:
                 query = query.filter(Alert.status == status)
+            if since:
+                query = query.filter(Alert.timestamp >= since)
             
             alerts = query.order_by(Alert.timestamp.desc()).offset(offset).limit(limit).all()
             return alerts
@@ -165,6 +204,86 @@ class AlertStore:
         finally:
             session.close()
     
+    def get_correlated_alerts(self, hours: int = 24, min_group_size: int = 2, limit_groups: int = 20) -> List[Dict[str, Any]]:
+        """
+        Group recent alerts by source IP - a real attack often shows up
+        as a sequence from one source (a port scan, then a brute force
+        attempt a minute later), not as isolated unrelated events. Only
+        returns sources with at least `min_group_size` alerts, most
+        active source first.
+        """
+        from datetime import timedelta
+        from collections import defaultdict
+
+        session = get_session(self.db_path)
+        try:
+            since = datetime.utcnow() - timedelta(hours=hours)
+            alerts = (
+                session.query(Alert)
+                .filter(Alert.timestamp >= since, Alert.source_ip.isnot(None))
+                .order_by(Alert.timestamp.asc())
+                .all()
+            )
+
+            groups = defaultdict(list)
+            for alert in alerts:
+                groups[alert.source_ip].append(alert.to_dict())
+
+            result = [
+                {
+                    "source_ip": src_ip,
+                    "alert_count": len(group),
+                    "first_seen": group[0]["timestamp"],
+                    "last_seen": group[-1]["timestamp"],
+                    "severities": sorted({a["severity"] for a in group}),
+                    "attack_types": [a["attack_type"] for a in group],
+                    "alerts": group,
+                }
+                for src_ip, group in groups.items()
+                if len(group) >= min_group_size
+            ]
+            result.sort(key=lambda g: g["last_seen"], reverse=True)
+            return result[:limit_groups]
+        finally:
+            session.close()
+
+    def get_rule_performance(self) -> List[Dict[str, Any]]:
+        """
+        Aggregate alert counts per rule_id: how many times each rule has
+        fired, when it last fired, and its average confidence. Built from
+        real persisted alert history (not an in-memory counter), so it
+        survives restarts and reflects everything ever detected, not just
+        the current process's uptime.
+        """
+        from sqlalchemy import func
+
+        session = get_session(self.db_path)
+        try:
+            rows = (
+                session.query(
+                    Alert.rule_id,
+                    func.count(Alert.id).label("fire_count"),
+                    func.max(Alert.last_seen).label("last_fired"),
+                    func.avg(Alert.ml_confidence).label("avg_confidence"),
+                    func.sum(Alert.count_occurrences).label("total_occurrences"),
+                )
+                .filter(Alert.rule_id.isnot(None))
+                .group_by(Alert.rule_id)
+                .all()
+            )
+            return [
+                {
+                    "rule_id": r.rule_id,
+                    "fire_count": r.fire_count,
+                    "total_occurrences": int(r.total_occurrences or r.fire_count),
+                    "last_fired": r.last_fired.isoformat() if r.last_fired else None,
+                    "avg_confidence": float(r.avg_confidence) if r.avg_confidence is not None else None,
+                }
+                for r in rows
+            ]
+        finally:
+            session.close()
+
     def get_alert_stats(self) -> Dict[str, Any]:
         """
         Get statistics about alerts.

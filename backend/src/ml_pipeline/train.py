@@ -179,12 +179,35 @@ def main():
     
     preprocessor = Preprocessor()
     
-    # Train preprocessing
-    X_train, y_train = preprocessor.fit_transform(train_df)
+    # ---- FIX: Separate features and labels BEFORE passing to preprocessor ----
+    # Drop ALL label columns (both original and binary)
+    label_columns = ['Label', 'label', 'Class', 'class', 'Label_Binary']
     
-    # Test preprocessing
-    X_test = preprocessor.transform(test_df)
-    y_test = preprocessor.encode_labels(test_df['Label_Binary'])
+    # Training data
+    X_train_df = train_df.drop(columns=[col for col in label_columns if col in train_df.columns])
+    y_train = train_df['Label_Binary']
+    
+    # Test data
+    X_test_df = test_df.drop(columns=[col for col in label_columns if col in test_df.columns])
+    y_test = test_df['Label_Binary']
+    
+    logger.info(f"Training features: {X_train_df.shape[1]} columns")
+    logger.info(f"Test features: {X_test_df.shape[1]} columns")
+    
+    # Fit preprocessor on training features only
+    preprocessor.fit(X_train_df)
+    
+    # Fit label encoder on training labels
+    logger.info("Fitting label encoder on training labels")
+    preprocessor.label_encoder.fit(y_train)
+    
+    # Transform features
+    X_train = preprocessor.transform(X_train_df)
+    X_test = preprocessor.transform(X_test_df)
+    
+    # Encode labels
+    y_train_encoded = preprocessor.label_encoder.transform(y_train)
+    y_test_encoded = preprocessor.label_encoder.transform(y_test)
     
     logger.info(f"Training features shape: {X_train.shape}")
     logger.info(f"Test features shape: {X_test.shape}")
@@ -203,7 +226,7 @@ def main():
     # Train with validation split
     train_metrics = model_builder.train(
         X_train=X_train,
-        y_train=y_train,
+        y_train=y_train_encoded,
         optimize=args.optimize
     )
     
@@ -221,7 +244,7 @@ def main():
         
         # Evaluate
         metrics = evaluator.evaluate_model(
-            y_true=y_test,
+            y_true=y_test_encoded,
             y_pred=y_pred,
             y_proba=y_proba,
             class_names=['Benign', 'Attack']
@@ -280,10 +303,9 @@ def main():
         inference_engine.load_model(str(model_path), str(preprocessor_path))
         
         # Test prediction on a sample
-        sample = test_df.iloc[0]
-        test_features = sample.drop('Label_Binary').to_dict()
+        sample = X_test_df.iloc[0].to_dict()
         
-        result = inference_engine.predict(test_features)
+        result = inference_engine.predict(sample)
         logger.info(f"Test prediction: {result['prediction']} (confidence: {result['confidence']:.3f})")
         
         # Get feature importance

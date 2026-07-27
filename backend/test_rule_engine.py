@@ -144,20 +144,29 @@ eng = RuleEngine(rules=LOW_T_RULES)
 passed = 0
 total = 0
 
-def fire_test(label, packets, expect=True):
+def fire_test(label, packets, expect=True, rule_id=None):
+    """
+    rule_id: if given, only alerts from this specific detector count toward
+    'fired' - otherwise a different, unrelated-but-correctly-firing detector
+    (e.g. ICMP/UDP Flood, whose own low test threshold is often incidentally
+    satisfied by generic test traffic) can cause a false failure on a
+    'this rule should NOT fire' assertion that has nothing to do with the
+    detector actually being tested.
+    """
     global passed, total
     total += 1
     eng.reset()
     alerts = []
     for p in packets:
         alerts.extend(eng.analyze_packet(p))
-    fired = len(alerts) > 0
+    relevant = [a for a in alerts if rule_id is None or a['rule_id'] == rule_id] if rule_id else alerts
+    fired = len(relevant) > 0
     ok = check(label, fired == expect,
                on_fail='alert not fired' if expect else 'unexpected alert fired')
     if ok:
         passed += 1
     if fired and expect:
-        print(f"       attack_type={alerts[0]['attack_type']!r}  severity={alerts[0]['severity']!r}")
+        print(f"       attack_type={relevant[0]['attack_type']!r}  severity={relevant[0]['severity']!r}")
     return ok
 
 # RULE-001: SYN Flood — 5 bare SYNs should alert
@@ -176,7 +185,7 @@ fire_test('RULE-002 Port Scan fires on 5 unique dst ports',
 # RULE-002: Repeated hits to the SAME port should not alert
 fire_test('RULE-002 ignores repeated hits to same port',
           [make_packet('UDP', dst_port=80) for _ in range(20)],
-          expect=False)
+          expect=False, rule_id='RULE-002')
 
 # RULE-003: ICMP Flood — 5 ICMP packets
 fire_test('RULE-003 ICMP Flood fires on 5 ICMP packets',
@@ -193,7 +202,7 @@ fire_test('RULE-005 Ping Sweep fires on 3 unique ICMP targets',
 # RULE-005: Non-echo ICMP (e.g. time exceeded, type=11) must not count as ping sweep
 fire_test('RULE-005 ignores non-echo ICMP types',
           [make_packet('ICMP', dst_ip=f'192.168.1.{i}', icmp_type=11) for i in range(1, 10)],
-          expect=False)
+          expect=False, rule_id='RULE-005')
 
 # RULE-006: DNS Amplification — 3 large DNS responses from port 53
 fire_test('RULE-006 DNS Amplification fires on large DNS responses',
@@ -204,7 +213,7 @@ fire_test('RULE-006 DNS Amplification fires on large DNS responses',
 fire_test('RULE-006 ignores small DNS responses',
           [make_packet('UDP', src_port=53, dst_port=40000,
                        payload_len=100, dns_qr='response') for _ in range(10)],
-          expect=False)
+          expect=False, rule_id='RULE-006')
 
 # RULE-007: SSH Brute Force
 fire_test('RULE-007 SSH Brute Force fires on repeated SYNs to port 22',
@@ -242,7 +251,7 @@ fire_test('RULE-013 Ping of Death fires on oversized ICMP payload',
 # RULE-013: Normal-sized ICMP must not alert
 fire_test('RULE-013 ignores ICMP within safe payload limit',
           [make_packet('ICMP', payload_len=64) for _ in range(5)],
-          expect=False)
+          expect=False, rule_id='RULE-013')
 
 # RULE-014: SYN-FIN Scan — both flags set
 fire_test('RULE-014 TCP SYN-FIN Scan fires on SYN+FIN packets',

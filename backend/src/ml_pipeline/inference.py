@@ -53,6 +53,9 @@ class InferenceEngine:
         self.threshold = threshold
         self.is_loaded = False
         self.prediction_count = 0
+        self.attack_count = 0
+        self.benign_count = 0
+        self.accuracy = None  # populated by model_loader from evaluation_metrics.json, if present
         
         logger.info(f"InferenceEngine initialized with threshold={threshold}")
     
@@ -119,9 +122,24 @@ class InferenceEngine:
         
         # Preprocess features
         X_scaled = self.preprocessor.transform(X)
-        
+
         # Get prediction probability
-        proba = self.model.predict_proba(X_scaled)
+        try:
+            proba = self.model.predict_proba(X_scaled)
+        except AttributeError as e:
+            # Verified failure mode: a model pickled with one scikit-learn
+            # version (this project pins scikit-learn==1.3.0) can load
+            # without error under a *different* installed version, but
+            # fail the first time it's actually used, with a cryptic
+            # internal AttributeError - not a friendly "version mismatch"
+            # message. Surface it as one, since `pip show scikit-learn`
+            # printing anything other than 1.3.0 is the fix.
+            raise RuntimeError(
+                f"Model prediction failed, likely due to a scikit-learn version "
+                f"mismatch (model was trained with scikit-learn==1.3.0 - run "
+                f"`pip show scikit-learn` and reinstall that exact version if "
+                f"it differs). Original error: {e}"
+            ) from e
         
         # Get class probabilities
         # Assuming binary classification: [benign_prob, attack_prob]
@@ -135,6 +153,10 @@ class InferenceEngine:
         
         # Update counter
         self.prediction_count += 1
+        if is_attack:
+            self.attack_count += 1
+        else:
+            self.benign_count += 1
         
         result = {
             'prediction': prediction,
@@ -288,6 +310,10 @@ class InferenceEngine:
         """
         return {
             'predictions_made': self.prediction_count,
+            'total_predictions': self.prediction_count,
+            'attack_predictions': self.attack_count,
+            'benign_predictions': self.benign_count,
+            'accuracy': self.accuracy,
             'threshold': self.threshold,
             'is_loaded': self.is_loaded,
             'feature_count': len(self.feature_columns) if self.feature_columns else 0,

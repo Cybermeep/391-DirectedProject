@@ -1,14 +1,6 @@
-# Visual Studio files
-.vs/
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
-
-# Python files
+# Python
 __pycache__/
 *.py[cod]
-*$py.class
 *.so
 .Python
 venv/
@@ -17,7 +9,12 @@ ENV/
 env.bak/
 venv.bak/
 
-# Dataset files (exclude large CSV files)
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+
+# Dataset files (LARGE - exclude these!)
 *.csv
 *.zip
 *.gz
@@ -27,29 +24,44 @@ venv.bak/
 *.pcap
 *.pcapng
 
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Logs and databases
-*.log
-*.db
-*.sqlite
-*.sqlite3
-
-# ML model files (save these but exclude if they're large)
+# ML Model files (can be large)
 *.joblib
 *.pkl
 *.h5
 *.pb
+*.model
+
+# Frontend
+node_modules/
+dist/
+out/
+*.log
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
 
 # Temporary files
 temp/
 tmp/
 *.tmp
+*.log
+
+# Specific large files to exclude
+data/datasets/
+src/ml_pipeline/models/
+*.png
+*.jpg
+*.ico

@@ -1,0 +1,206 @@
+.rules-page {
+  padding: 24px 32px;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.rules-header h2 {
+  font-size: 20px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.rules-header p {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+.rules-locked {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 32px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.rules-locked a {
+  color: var(--accent);
+}
+
+.rules-layout {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.rule-help {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.rule-help h4 {
+  color: var(--text);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.rule-help code {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: var(--accent);
+  font-family: 'Cascadia Code', 'Consolas', monospace;
+  font-size: 12px;
+}
+
+.rule-example {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-family: 'Cascadia Code', 'Consolas', monospace;
+  font-size: 12px;
+  color: var(--success);
+  margin: 8px 0 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.rule-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.rule-field-chip {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.rule-field-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.rule-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.rule-textarea {
+  width: 100%;
+  min-height: 90px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--text);
+  font-family: 'Cascadia Code', 'Consolas', monospace;
+  font-size: 13px;
+  resize: vertical;
+  outline: none;
+}
+
+.rule-textarea.invalid {
+  border-color: var(--danger);
+}
+
+.rule-textarea.valid {
+  border-color: var(--success);
+}
+
+.rule-validation {
+  font-size: 12px;
+  margin-top: 6px;
+  min-height: 16px;
+}
+
+.rule-validation.ok {
+  color: var(--success);
+}
+
+.rule-validation.err {
+  color: var(--danger);
+}
+
+.rule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.rule-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.rule-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rule-item-name {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.rule-item-text {
+  margin-top: 6px;
+  font-family: 'Cascadia Code', 'Consolas', monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.rule-item-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.rule-severity {
+  font-size: 10px;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.rule-severity.low { background: rgba(88, 166, 255, 0.15); color: var(--accent); }
+.rule-severity.medium { background: rgba(210, 153, 34, 0.15); color: var(--warning); }
+.rule-severity.high { background: rgba(248, 81, 73, 0.15); color: var(--danger); }
+.rule-severity.critical { background: rgba(255, 68, 68, 0.2); color: var(--critical); }
+
+.rule-icon-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 3px 8px;
+}
+
+.rule-icon-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}

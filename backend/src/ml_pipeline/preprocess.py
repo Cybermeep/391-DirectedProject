@@ -39,40 +39,35 @@ class Preprocessor:
         self.is_fitted = False
         logger.info("Preprocessor initialized")
     
-    def fit(self, df: pd.DataFrame, target_col: str = 'Label_Binary') -> None:
+    def fit(self, df: pd.DataFrame) -> None:
         """
         Fit the preprocessor on the training data.
         
         Args:
-            df (pd.DataFrame): Training DataFrame
-            target_col (str): Name of the target column
-            
-        Raises:
-            ValueError: If target column not found in DataFrame
+            df (pd.DataFrame): Training DataFrame (features only, no labels)
         """
-        # Separate features and target
-        if target_col in df.columns:
-            X = df.drop(columns=[target_col])
-            y = df[target_col]
-        else:
-            X = df
-            y = None
-        
         # Store feature columns
-        self.feature_columns = X.columns.tolist()
+        self.feature_columns = df.columns.tolist()
         
-        # Fit scaler on numerical features
-        numerical_cols = X.select_dtypes(include=[np.number]).columns.tolist()
-        if numerical_cols:
-            logger.info(f"Fitting scaler on {len(numerical_cols)} numerical features")
-            self.scaler.fit(X[numerical_cols])
+        # Make a copy
+        X = df.copy()
+        
+        # Convert categorical columns to numeric
+        categorical_cols = X.select_dtypes(include=['object', 'category']).columns.tolist()
+        if categorical_cols:
+            logger.info(f"Converting {len(categorical_cols)} categorical columns to numeric codes")
+            for col in categorical_cols:
+                X[col] = pd.Categorical(X[col]).codes
+        
+        # Ensure all columns are numeric
+        X = X.astype(float)
+        
+        # Fit scaler on all features
+        if len(X.columns) > 0:
+            logger.info(f"Fitting scaler on {len(X.columns)} features")
+            self.scaler.fit(X)
         else:
-            logger.warning("No numerical columns found for scaling")
-        
-        # Fit label encoder if target provided
-        if y is not None:
-            logger.info("Fitting label encoder")
-            self.label_encoder.fit(y)
+            logger.warning("No features found for scaling")
         
         self.is_fitted = True
         logger.info("Preprocessor fitting complete")
@@ -93,20 +88,26 @@ class Preprocessor:
         if not self.is_fitted:
             raise RuntimeError("Preprocessor must be fitted before transform")
         
+        # Make a copy to avoid modifying original
+        X = df.copy()
+        
+        # Remove label column if it exists
+        if 'Label_Binary' in X.columns:
+            X = X.drop(columns=['Label_Binary'])
+        
         # Ensure all feature columns are present
-        missing_cols = set(self.feature_columns) - set(df.columns)
+        missing_cols = set(self.feature_columns) - set(X.columns)
         if missing_cols:
             logger.warning(f"Missing columns: {missing_cols}. Adding with zeros.")
             for col in missing_cols:
-                df[col] = 0
+                X[col] = 0
         
-        # Select only feature columns
-        X = df[self.feature_columns]
+        # Select only feature columns (exclude any extra columns)
+        X = X[self.feature_columns]
         
         # Convert categorical columns to numeric
-        categorical_cols = X.select_dtypes(include=['object']).columns.tolist()
+        categorical_cols = X.select_dtypes(include=['object', 'category']).columns.tolist()
         for col in categorical_cols:
-            # Use one-hot encoding or label encoding
             X[col] = pd.Categorical(X[col]).codes
         
         # Ensure all columns are numeric
@@ -128,17 +129,30 @@ class Preprocessor:
         Returns:
             Tuple[np.ndarray, np.ndarray]: (X_transformed, y)
         """
-        self.fit(df, target_col)
-        
+        # Separate features and target
         if target_col in df.columns:
             X = df.drop(columns=[target_col])
             y = df[target_col]
-            y_encoded = self.label_encoder.transform(y)
         else:
             X = df
-            y_encoded = None
+            y = None
         
+        # Fit the preprocessor on features
+        self.fit(X)
+        
+        # Fit the label encoder on labels if provided
+        if y is not None:
+            logger.info("Fitting label encoder on training labels")
+            self.label_encoder.fit(y)
+        
+        # Transform features
         X_transformed = self.transform(X)
+        
+        # Encode labels if provided
+        if y is not None:
+            y_encoded = self.label_encoder.transform(y)
+        else:
+            y_encoded = None
         
         return X_transformed, y_encoded
     
@@ -152,9 +166,6 @@ class Preprocessor:
         from sklearn.pipeline import Pipeline
         from sklearn.compose import ColumnTransformer
         from sklearn.preprocessing import StandardScaler, OneHotEncoder
-        
-        # This is a placeholder for when we need to integrate with scikit-learn's pipeline
-        # For now, we handle preprocessing manually
         
         logger.info("Creating preprocessing pipeline")
         return Pipeline([

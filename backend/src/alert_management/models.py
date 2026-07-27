@@ -10,6 +10,11 @@ from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 import os
 
+try:
+    from appconfig import ALERTS_DB_PATH as _DEFAULT_DB_PATH
+except ImportError:  # pragma: no cover - fallback if run outside the package context
+    _DEFAULT_DB_PATH = 'data/alerts.db'
+
 Base = declarative_base()
 
 class Alert(Base):
@@ -59,14 +64,14 @@ class Alert(Base):
             'status': self.status
         }
 
-def init_database(db_path='data/alerts.db'):
+def init_database(db_path=_DEFAULT_DB_PATH):
     """Initialize the database with tables."""
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
     engine = create_engine(f'sqlite:///{db_path}', echo=False)
     Base.metadata.create_all(engine)
     return engine
 
-def get_session(db_path='data/alerts.db'):
+def get_session(db_path=_DEFAULT_DB_PATH):
     """Get a database session."""
     engine = init_database(db_path)
     Session = sessionmaker(bind=engine)
