@@ -14,6 +14,7 @@ const SignatureDetectionTable: React.FC = () => {
   const [quickRule, setQuickRule] = useState('');
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState('');
+  const [collapsed, setCollapsed] = useState(false);
 
   const refresh = useCallback(() => {
     api
@@ -63,96 +64,103 @@ const SignatureDetectionTable: React.FC = () => {
 
   return (
     <div className="widget-card">
-      <div className="widget-header">
-        <h3>Signature Detection</h3>
+      <div className="widget-header widget-header-collapsible" onClick={() => setCollapsed((c) => !c)}>
+        <h3>
+          <span className={`widget-chevron ${collapsed ? 'collapsed' : ''}`}>▾</span>
+          Signature Detection
+        </h3>
         <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
           {activeCount} / {builtins.length} active
         </span>
       </div>
 
-      {loading ? (
-        <div className="widget-empty">Loading…</div>
-      ) : (
-        <div className="signature-table-wrap">
-          <table className="signature-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Attack Type</th>
-                <th>Severity</th>
-                <th>Threshold</th>
-                <th>Window</th>
-                <th>Description</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {builtins.map((r) => (
-                <tr key={r.id} className={r.enabled ? '' : 'disabled'}>
-                  <td><span className="sig-code">{r.code}</span></td>
-                  <td>{r.name}</td>
-                  <td style={{ color: 'var(--text-muted)' }}>{r.attack_type}</td>
-                  <td><span className={`sig-severity ${r.severity}`}>{r.severity}</span></td>
-                  <td>{r.threshold ?? '—'}</td>
-                  <td>{r.window_seconds ? `${r.window_seconds}s` : '—'}</td>
-                  <td style={{ color: 'var(--text-muted)', maxWidth: 260, whiteSpace: 'normal' }}>{r.description}</td>
-                  <td>
-                    <button
-                      className={`toggle-switch ${r.enabled ? 'on' : ''}`}
-                      onClick={() => handleToggle(r)}
-                      aria-label={r.enabled ? 'Disable' : 'Enable'}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <div className="custom-sig-section">
-        <h4>Custom Signatures</h4>
-        {canAddCustom ? (
-          <form className="custom-sig-form" onSubmit={handleQuickAdd}>
-            <input
-              placeholder="Name (e.g. Suspicious upload)"
-              value={quickName}
-              onChange={(e) => setQuickName(e.target.value)}
-              style={{ flex: '0 0 220px' }}
-            />
-            <input
-              placeholder="SYN_Flag_Cnt > 5 AND Flow_Byts/s > 1000"
-              value={quickRule}
-              onChange={(e) => setQuickRule(e.target.value)}
-            />
-            <button type="submit" disabled={adding}>
-              {adding ? 'Adding…' : 'Add Custom Signature'}
-            </button>
-          </form>
-        ) : (
-          <div className="custom-sig-locked">
-            Writing your own AST-validated signatures is an Enterprise feature.{' '}
-            <Link to="/billing/upgrade">Upgrade</Link>, or open the{' '}
-            <Link to="/rules">full Rule Builder</Link> for field help and examples.
-          </div>
-        )}
-        {error && <div className="auth-error" style={{ marginTop: 8 }}>{error}</div>}
-        {justAdded && !error && (
-          <div className="billing-success" style={{ marginTop: 8 }}>
-            "{justAdded}" added and enabled. See it (and edit/delete it) on the{' '}
-            <Link to="/rules">full Rule Builder page</Link>.
-          </div>
-        )}
-        {(() => {
-          const customCount = rules.filter((r) => !r.is_builtin).length;
-          return customCount > 0 ? (
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>
-              You have {customCount} custom signature{customCount === 1 ? '' : 's'} saved.
+      {!collapsed && (
+        <>
+          {loading ? (
+            <div className="widget-empty">Loading…</div>
+          ) : (
+            <div className="signature-table-wrap">
+              <table className="signature-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Attack Type</th>
+                    <th>Severity</th>
+                    <th>Threshold</th>
+                    <th>Window</th>
+                    <th>Description</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {builtins.map((r) => (
+                    <tr key={r.id} className={r.enabled ? '' : 'disabled'}>
+                      <td><span className="sig-code">{r.code}</span></td>
+                      <td>{r.name}</td>
+                      <td style={{ color: 'var(--text-muted)' }}>{r.attack_type}</td>
+                      <td><span className={`sig-severity ${r.severity}`}>{r.severity}</span></td>
+                      <td>{r.threshold ?? '—'}</td>
+                      <td>{r.window_seconds ? `${r.window_seconds}s` : '—'}</td>
+                      <td style={{ color: 'var(--text-muted)', maxWidth: 260, whiteSpace: 'normal' }}>{r.description}</td>
+                      <td>
+                        <button
+                          className={`toggle-switch ${r.enabled ? 'on' : ''}`}
+                          onClick={() => handleToggle(r)}
+                          aria-label={r.enabled ? 'Disable' : 'Enable'}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          ) : null;
-        })()}
-      </div>
+          )}
+
+          <div className="custom-sig-section">
+            <h4>Custom Signatures</h4>
+            {canAddCustom ? (
+              <form className="custom-sig-form" onSubmit={handleQuickAdd}>
+                <input
+                  placeholder="Name (e.g. Suspicious upload)"
+                  value={quickName}
+                  onChange={(e) => setQuickName(e.target.value)}
+                  style={{ flex: '0 0 220px' }}
+                />
+                <input
+                  placeholder="SYN_Flag_Cnt > 5 AND Flow_Byts/s > 1000"
+                  value={quickRule}
+                  onChange={(e) => setQuickRule(e.target.value)}
+                />
+                <button type="submit" disabled={adding}>
+                  {adding ? 'Adding…' : 'Add Custom Signature'}
+                </button>
+              </form>
+            ) : (
+              <div className="custom-sig-locked">
+                Writing your own AST-validated signatures is an Enterprise feature.{' '}
+                <Link to="/billing/upgrade">Upgrade</Link>, or open the{' '}
+                <Link to="/rules">full Rule Builder</Link> for field help and examples.
+              </div>
+            )}
+            {error && <div className="auth-error" style={{ marginTop: 8 }}>{error}</div>}
+            {justAdded && !error && (
+              <div className="billing-success" style={{ marginTop: 8 }}>
+                "{justAdded}" added and enabled. See it (and edit/delete it) on the{' '}
+                <Link to="/rules">full Rule Builder page</Link>.
+              </div>
+            )}
+            {(() => {
+              const customCount = rules.filter((r) => !r.is_builtin).length;
+              return customCount > 0 ? (
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>
+                  You have {customCount} custom signature{customCount === 1 ? '' : 's'} saved.
+                </div>
+              ) : null;
+            })()}
+          </div>
+        </>
+      )}
     </div>
   );
 };

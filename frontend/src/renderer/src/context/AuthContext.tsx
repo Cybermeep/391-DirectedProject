@@ -5,6 +5,8 @@ interface AuthContextValue {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  justLoggedIn: boolean;
+  clearJustLoggedIn: () => void;
   login: (emailOrUsername: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
   loginWithGoogle: (idToken: string) => Promise<void>;
@@ -28,6 +30,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(api.getStoredUser());
   const [isLoading, setIsLoading] = useState(true);
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
 
   // Re-validate the stored session against the backend on launch, in case
   // the token expired while the app was closed.
@@ -64,6 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (emailOrUsername: string, password: string) => {
     const res = await api.login(emailOrUsername, password);
     setUser(res.user);
+    setJustLoggedIn(true);
   }, []);
 
   const register = useCallback(async (username: string, email: string, password: string) => {
@@ -74,7 +78,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginWithGoogle = useCallback(async (idToken: string) => {
     const res = await api.loginWithGoogle(idToken);
     setUser(res.user);
+    setJustLoggedIn(true);
   }, []);
+
+  const clearJustLoggedIn = useCallback(() => setJustLoggedIn(false), []);
 
   const logout = useCallback(async () => {
     await api.logout();
@@ -108,6 +115,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         isAuthenticated: !!user,
         isLoading,
+        justLoggedIn,
+        clearJustLoggedIn,
         login,
         register,
         loginWithGoogle,

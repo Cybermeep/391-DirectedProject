@@ -13,6 +13,7 @@ import logging
 from datetime import datetime, timedelta
 
 import jwt
+from sqlalchemy import func
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from appconfig import JWT_SECRET, JWT_EXPIRY_HOURS, GOOGLE_CLIENT_ID, TIER_LIMITS
@@ -123,7 +124,7 @@ def register_user(username: str, email: str, password: str) -> User:
 
         if session.query(User).filter_by(email=email).first():
             raise AuthError("An account with this email already exists", 409)
-        if session.query(User).filter_by(username=username).first():
+        if session.query(User).filter(func.lower(User.username) == username.lower()).first():
             raise AuthError("Username already taken", 409)
 
         user = User(
@@ -148,7 +149,7 @@ def login_local(email_or_username: str, password: str) -> User:
         identifier = (email_or_username or "").strip().lower()
         user = (
             session.query(User)
-            .filter((User.email == identifier) | (User.username == identifier))
+            .filter((User.email == identifier) | (func.lower(User.username) == identifier))
             .first()
         )
 

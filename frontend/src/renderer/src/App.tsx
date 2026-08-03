@@ -1,6 +1,6 @@
 // frontend/src/renderer/src/App.tsx
 import React, { useEffect, useState, useRef } from 'react';
-import { HashRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
@@ -9,9 +9,13 @@ import UpgradeTier from './components/billing/UpgradeTier';
 import RuleBuilder from './components/rules/RuleBuilder';
 import AttackTimeline from './components/timeline/AttackTimeline';
 import AccountSettings from './components/account/AccountSettings';
+import Documentation from './components/docs/Documentation';
+import SplashScreen from './components/SplashScreen';
+import TutorialModal from './components/TutorialModal';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import api from './services/api';
+import logo from './assets/logo.png';
 import './App.css';
 
 // HashRouter (not BrowserRouter) is used deliberately: this app ships both
@@ -45,6 +49,53 @@ const ApiStatusPill: React.FC = () => {
       <span className={`status-dot ${online ? 'active' : 'offline'}`}></span>
       <span>{online === null ? 'Checking…' : online ? 'API Online' : 'API Offline'}</span>
     </div>
+  );
+};
+
+const NAV_ITEMS = [
+  { to: '/', label: 'Dashboard', end: true },
+  { to: '/rules', label: 'Rules', end: false },
+  { to: '/timeline', label: 'Timeline', end: false },
+  { to: '/billing/upgrade', label: 'Upgrade', end: false },
+  { to: '/docs', label: 'Docs', end: false },
+];
+
+const NavTabs: React.FC = () => {
+  const location = useLocation();
+  const navRef = useRef<HTMLElement>(null);
+  const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
+
+  useEffect(() => {
+    const update = () => {
+      const activeLink = navRef.current?.querySelector('a.active') as HTMLElement | null;
+      if (activeLink) {
+        setIndicator({ left: activeLink.offsetLeft, width: activeLink.offsetWidth });
+      }
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, [location.pathname]);
+
+  return (
+    <nav className="app-nav" ref={navRef}>
+      {NAV_ITEMS.map((item) => (
+        <NavLink
+          key={item.to}
+          to={item.to}
+          end={item.end}
+          className={({ isActive }) => (isActive ? 'active' : '')}
+        >
+          {item.label}
+        </NavLink>
+      ))}
+      {indicator && (
+        <span
+          className="app-nav-indicator"
+          style={{ left: indicator.left, width: indicator.width }}
+        />
+      )}
+    </nav>
   );
 };
 
@@ -85,36 +136,48 @@ const AvatarMenu: React.FC = () => {
 };
 
 const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading, justLoggedIn, clearJustLoggedIn } = useAuth();
+  const [minDurationDone, setMinDurationDone] = useState(false);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setMinDurationDone(true), 1800);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (justLoggedIn) {
+      setTutorialOpen(true);
+      clearJustLoggedIn();
+    }
+  }, [justLoggedIn, clearJustLoggedIn]);
+
+  if (isLoading || !minDurationDone) {
+    return <SplashScreen />;
+  }
 
   return (
     <div className="app">
       <header className="app-header">
-        <h1>🛡️ NIDS</h1>
+        <div className="header-left">
+          <h1>
+            <img src={logo} alt="HomiNIDS logo" className="app-logo" />
+            HomiNIDS
+          </h1>
 
-        {isAuthenticated && (
-          <nav className="app-nav">
-            <NavLink to="/" end className={({ isActive }) => (isActive ? 'active' : '')}>
-              Dashboard
-            </NavLink>
-            <NavLink to="/rules" className={({ isActive }) => (isActive ? 'active' : '')}>
-              Rules
-            </NavLink>
-            <NavLink to="/timeline" className={({ isActive }) => (isActive ? 'active' : '')}>
-              Timeline
-            </NavLink>
-            <NavLink to="/billing/upgrade" className={({ isActive }) => (isActive ? 'active' : '')}>
-              Upgrade
-            </NavLink>
-          </nav>
-        )}
+          {isAuthenticated && <NavTabs />}
+        </div>
 
-        <ApiStatusPill />
+        <div className="header-right">
+          <ApiStatusPill />
 
-        {isAuthenticated && <AvatarMenu />}
+          {isAuthenticated && <AvatarMenu />}
+        </div>
       </header>
 
       <div className="app-body">{children}</div>
+
+      {tutorialOpen && <TutorialModal onClose={() => setTutorialOpen(false)} />}
     </div>
   );
 };
@@ -165,6 +228,14 @@ function App(): React.JSX.Element {
                 element={
                   <ProtectedRoute>
                     <AccountSettings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/docs"
+                element={
+                  <ProtectedRoute>
+                    <Documentation />
                   </ProtectedRoute>
                 }
               />

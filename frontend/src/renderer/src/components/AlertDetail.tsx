@@ -72,8 +72,14 @@ const AlertDetail: React.FC<AlertDetailProps> = ({ alert, explanation, onClose }
         </div>
 
         <div className="detail-row">
-          <span className="detail-label">Confidence</span>
-          <span className="detail-value">{(alert.ml_confidence * 100).toFixed(1)}%</span>
+          <span className="detail-label">{alert.rule_id ? 'Detection' : 'Confidence'}</span>
+          <span className="detail-value">
+            {alert.rule_id
+              ? `Rule match (${alert.rule_id})`
+              : alert.ml_confidence != null
+                ? `${(alert.ml_confidence * 100).toFixed(1)}%`
+                : '—'}
+          </span>
         </div>
 
         <div className="detail-row">

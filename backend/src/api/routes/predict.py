@@ -26,6 +26,9 @@ def model_status():
         return jsonify({"success": True, "loaded": True, "stats": engine.get_stats()})
     except ModelNotFoundError as e:
         return jsonify({"success": False, "loaded": False, "error": str(e)}), 503
+    except Exception as e:
+        logger.exception("Unexpected error checking model status")
+        return jsonify({"success": False, "loaded": False, "error": f"{type(e).__name__}: {e}"}), 500
 
 
 @bp.route("/model/install", methods=["POST"])

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import GoogleSignInButton from './GoogleSignInButton';
+import logo from '../../assets/logo.png';
 import './Auth.css';
 
 const Login: React.FC = () => {
@@ -42,10 +43,9 @@ const Login: React.FC = () => {
 
   return (
     <div className="auth-screen">
-      <div className="auth-card">
-        <div className="auth-brand">
-          <span className="auth-brand-icon">🛡️</span>
-          <span className="auth-brand-name">Network Intrusion Detection System</span>
+      <div className="auth-card auth-card-animate">
+        <div className="auth-logo-wrap">
+          <img src={logo} alt="HomiNIDS" className="auth-logo" />
         </div>
         <div className="auth-title">Welcome back</div>
         <div className="auth-subtitle">Sign in to view live alerts and manage your detection rules.</div>

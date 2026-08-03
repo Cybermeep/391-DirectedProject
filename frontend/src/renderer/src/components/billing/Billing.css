@@ -32,18 +32,22 @@
   transition: border-color 0.15s ease, transform 0.1s ease;
 }
 
-.tier-card:hover {
+.tier-card.selectable:hover {
   transform: translateY(-2px);
-}
-
-.tier-card.selected {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
+  box-shadow: 0 4px 16px var(--shadow);
 }
 
 .tier-card.current {
   opacity: 0.6;
   cursor: default;
+}
+
+.tier-cta {
+  margin-top: 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
 }
 
 .tier-name {
@@ -115,6 +119,11 @@
 .card-row {
   display: flex;
   gap: 10px;
+  align-self: flex-start;
+}
+
+.card-row .auth-field {
+  flex: 0 0 110px;
 }
 
 .billing-success {
@@ -124,5 +133,102 @@
   border-radius: 6px;
   padding: 10px 12px;
   font-size: 13px;
+  margin-bottom: 16px;
+}
+
+/* Payment modal */
+@keyframes payment-backdrop-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes payment-modal-rise {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.payment-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+  animation: payment-backdrop-fade 0.18s ease-out;
+}
+
+.payment-modal {
+  position: relative;
+  width: 440px;
+  max-width: 92vw;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  animation: payment-modal-rise 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.payment-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: none;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+}
+.payment-modal-close:hover {
+  color: var(--text);
+}
+
+.payment-modal-tier {
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.payment-modal .card-form {
+  max-width: none;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.payment-modal-success {
+  text-align: center;
+  padding: 12px 4px 4px;
+}
+.payment-modal-success-icon {
+  width: 48px;
+  height: 48px;
+  line-height: 48px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  background: rgba(63, 185, 80, 0.15);
+  color: var(--success);
+  font-size: 22px;
+  font-weight: 700;
+}
+.payment-modal-success h3 {
+  font-size: 15px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.payment-modal-success p {
+  font-size: 13px;
+  color: var(--text-muted);
   margin-bottom: 16px;
 }

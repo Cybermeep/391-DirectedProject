@@ -20,7 +20,6 @@ extraResources:
       - '!venv/**'
       - '!__pycache__/**'
       - '!**/__pycache__/**'
-      - '!src/ml_pipeline/models/**'
       - '!.env'
       - '!*.db'
 win:

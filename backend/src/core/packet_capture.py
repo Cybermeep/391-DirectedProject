@@ -407,7 +407,7 @@ class PacketCapture:
         """
         duration = None
         if self._capture_stats['start_time']:
-            end_time = self._capture_stats.get('end_time', time.time())
+            end_time = self._capture_stats.get('end_time') or time.time()
             duration = end_time - self._capture_stats['start_time']
         
         return {

@@ -1,5 +1,5 @@
 /**
- * API Client for the NIDS Backend
+ * API Client for the HomiNIDS Backend
  *
  * Base URL is configurable at build time via VITE_API_BASE_URL so this
  * same bundle can run as an Electron renderer talking to a local backend

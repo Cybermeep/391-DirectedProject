@@ -28,6 +28,7 @@ function timeAgo(iso: string | null): string {
 const RulePerformanceTable: React.FC = () => {
   const [rules, setRules] = useState<RulePerf[]>([]);
   const [loading, setLoading] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,52 +51,54 @@ const RulePerformanceTable: React.FC = () => {
   }, []);
 
   const withActivity = rules.filter((r) => r.fire_count > 0);
-  const neverFired = rules.filter((r) => r.fire_count === 0);
 
   return (
     <div className="widget-card">
-      <div className="widget-header">
-        <h3>Rule Performance</h3>
+      <div className="widget-header widget-header-collapsible" onClick={() => setCollapsed((c) => !c)}>
+        <h3>
+          <span className={`widget-chevron ${collapsed ? 'collapsed' : ''}`}>▾</span>
+          Rule Performance
+        </h3>
         <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-          {withActivity.length} of {rules.length} rules have fired
+          {withActivity.length === 0 ? 'No rules have fired' : `${withActivity.length} rule${withActivity.length === 1 ? '' : 's'} have fired`}
         </span>
       </div>
 
-      {loading ? (
-        <div className="widget-empty">Loading…</div>
-      ) : rules.length === 0 ? (
-        <div className="widget-empty">No rule data yet.</div>
-      ) : (
-        <div className="signature-table-wrap">
-          <table className="signature-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Severity</th>
-                <th>Fires</th>
-                <th>Occurrences</th>
-                <th>Last Fired</th>
-                <th>Avg. Confidence</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[...withActivity, ...neverFired].map((r) => (
-                <tr key={r.rule_id} className={r.enabled === false ? 'disabled' : ''}>
-                  <td><span className="sig-code">{r.rule_id}</span></td>
-                  <td>{r.name}</td>
-                  <td>{r.severity ? <span className={`sig-severity ${r.severity}`}>{r.severity}</span> : '—'}</td>
-                  <td>{r.fire_count}</td>
-                  <td>{r.total_occurrences}</td>
-                  <td style={{ color: 'var(--text-muted)' }}>{timeAgo(r.last_fired)}</td>
-                  <td style={{ color: 'var(--text-muted)' }}>
-                    {r.avg_confidence != null ? `${(r.avg_confidence * 100).toFixed(0)}%` : '—'}
-                  </td>
+      {!collapsed && (
+        loading ? (
+          <div className="widget-empty">Loading…</div>
+        ) : rules.length === 0 ? (
+          <div className="widget-empty">No rule data yet.</div>
+        ) : withActivity.length === 0 ? (
+          <div className="widget-empty">No rules have fired yet.</div>
+        ) : (
+          <div className="signature-table-wrap">
+            <table className="signature-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Severity</th>
+                  <th>Fires</th>
+                  <th>Occurrences</th>
+                  <th>Last Fired</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {withActivity.map((r) => (
+                  <tr key={r.rule_id} className={r.enabled === false ? 'disabled' : ''}>
+                    <td><span className="sig-code">{r.rule_id}</span></td>
+                    <td>{r.name}</td>
+                    <td>{r.severity ? <span className={`sig-severity ${r.severity}`}>{r.severity}</span> : '—'}</td>
+                    <td>{r.fire_count}</td>
+                    <td>{r.total_occurrences}</td>
+                    <td style={{ color: 'var(--text-muted)' }}>{timeAgo(r.last_fired)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
       )}
     </div>
   );

@@ -1,0 +1,54 @@
+.splash-screen {
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  background: var(--bg);
+  animation: splash-fade-in 0.25s ease-out;
+}
+
+.splash-logo {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  animation: splash-pulse 1.8s ease-in-out infinite;
+}
+
+.splash-dots {
+  display: flex;
+  gap: 8px;
+}
+
+.splash-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: splash-dot-bounce 1.2s ease-in-out infinite;
+}
+
+.splash-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.splash-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes splash-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes splash-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.06); opacity: 0.85; }
+}
+
+@keyframes splash-dot-bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.5; }
+  40% { transform: translateY(-6px); opacity: 1; }
+}

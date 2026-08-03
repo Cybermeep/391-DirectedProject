@@ -43,19 +43,21 @@ const ThreatClassificationDonut: React.FC = () => {
         <div className="widget-empty">No attacks classified yet.</div>
       ) : (
         <>
-          <ResponsiveContainer width="100%" height={220}>
-            <PieChart>
-              <Pie data={data} dataKey="count" nameKey="attack_type" innerRadius={65} outerRadius={95} paddingAngle={2}>
-                {data.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }} />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="donut-center-label">
-            <div className="big-number">{total}</div>
-            <div className="caption">attacks</div>
+          <div className="donut-chart-wrap">
+            <ResponsiveContainer width="100%" height={190}>
+              <PieChart>
+                <Pie data={data} dataKey="count" nameKey="attack_type" innerRadius={58} outerRadius={82} paddingAngle={2}>
+                  {data.map((_, i) => (
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="donut-center-label">
+              <div className="big-number">{total}</div>
+              <div className="caption">attacks</div>
+            </div>
           </div>
           <div className="donut-legend">
             {data.map((d, i) => (

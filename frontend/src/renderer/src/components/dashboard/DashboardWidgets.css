@@ -1,10 +1,11 @@
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 1fr minmax(260px, 320px);
   gap: 20px;
   padding: 24px;
   height: 100%;
   overflow-y: auto;
+  background: radial-gradient(1400px 700px at 50% -10%, var(--accent-tint), transparent 55%), var(--bg);
 }
 
 .dashboard-main {
@@ -41,7 +42,7 @@
 .widget-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 28px;
 }
 
 .widget-row-3 {
@@ -50,23 +51,40 @@
 
 .widget-card {
   background: var(--surface);
-  border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 1px 3px var(--shadow);
+  padding: 32px;
+  box-shadow: 0 20px 44px -14px var(--shadow), 0 4px 10px -4px var(--shadow);
 }
 
 .widget-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 
 .widget-header h3 {
   font-size: 14px;
   font-weight: 600;
   color: var(--text);
+  display: flex;
+  align-items: center;
+}
+
+.widget-header-collapsible {
+  cursor: pointer;
+  user-select: none;
+}
+
+.widget-chevron {
+  display: inline-block;
+  margin-right: 8px;
+  font-size: 10px;
+  color: var(--text-muted);
+  transition: transform 0.15s ease;
+}
+.widget-chevron.collapsed {
+  transform: rotate(-90deg);
 }
 
 .widget-empty {
@@ -74,6 +92,22 @@
   font-size: 13px;
   text-align: center;
   padding: 60px 20px;
+}
+
+.threat-trend-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.threat-trend-pane-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+@media (max-width: 700px) {
+  .threat-trend-split { grid-template-columns: 1fr; }
 }
 
 .timeframe-toggle {
@@ -118,14 +152,20 @@
   height: 8px;
   border-radius: 50%;
 }
+.donut-chart-wrap {
+  position: relative;
+}
 .donut-center-label {
-  text-align: center;
-  margin-top: -170px;
-  margin-bottom: 60px;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   pointer-events: none;
 }
 .donut-center-label .big-number {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 700;
   color: var(--text);
 }
@@ -295,12 +335,12 @@
 /* Alert log sidebar */
 .alert-log-panel {
   background: var(--surface);
-  border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 20px;
+  padding: 28px;
   height: fit-content;
   position: sticky;
   top: 0;
+  box-shadow: 0 20px 44px -14px var(--shadow), 0 4px 10px -4px var(--shadow);
 }
 .alert-log-header {
   display: flex;
@@ -329,10 +369,10 @@
 }
 .alert-card {
   background: var(--bg);
-  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 12px 14px;
   position: relative;
+  box-shadow: 0 6px 16px -8px var(--shadow);
 }
 .alert-card-top {
   display: flex;

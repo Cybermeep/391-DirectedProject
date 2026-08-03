@@ -184,6 +184,9 @@ def get_rule_performance():
     except Exception as e:
         logger.error(f"Error getting rule performance: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@bp.route('/severity_distribution', methods=['GET'])
 def get_severity_distribution():
     """Get severity distribution statistics."""
     try:

@@ -72,17 +72,21 @@ actually double-clicks.
    npx electron-builder --win
    ```
    This bundles the `backend/` folder (minus `venv/`, `__pycache__/`,
-   model files, and `.env` — see the `extraResources` filter in
-   `electron-builder.yml`) into the installed app's resources folder.
+   and `.env` — see the `extraResources` filter in `electron-builder.yml`)
+   into the installed app's resources folder. **The trained model is
+   bundled too** - it's small enough (~65MB) relative to the
+   Electron/Chromium runtime already being packaged that there's no
+   reason to make it a separate step.
 
 2. **Run the generated `network-intrusion-app-<version>-setup.exe`** on
    the target machine. NSIS installs the app (and the bundled backend
-   source) under `Program Files\network-intrusion-app\resources\backend`.
+   source, model included) under
+   `Program Files\network-intrusion-app\resources\backend`.
 
 3. **Run the install wizard once**, pointed at that installed location:
    ```powershell
    cd "C:\Program Files\network-intrusion-app\resources\backend"
-   python ..\..\..\installer\setup_wizard.py --model-dir C:\path\to\model-files
+   python ..\..\..\installer\setup_wizard.py --silent
    ```
    (Or run it from wherever you keep `installer/setup_wizard.py` — it
    only needs to be pointed at a `backend/` folder with `requirements.txt`
@@ -98,25 +102,25 @@ actually double-clicks.
      packet capture on Windows) and tells you where to get it if not:
      https://npcap.com/#download — check "Install Npcap in WinPcap
      API-compatible Mode" during its install
-   - copies your trained model files into the app's per-user data
-     directory (`%APPDATA%\NIDS\models`) — **not** into `Program Files`,
-     since that's per-user data, not part of the app itself
    - initializes both SQLite databases (`%APPDATA%\NIDS\app.db` for
      accounts/rules, `%APPDATA%\NIDS\alerts.db` for alerts)
    - optionally asks for a Google OAuth Client ID (see below) and writes
      `resources/backend/.env`
 
+   You no longer need `--model-dir` here - the model is already bundled
+   and `ml_pipeline/model_loader.py` finds and installs it into
+   `%APPDATA%\NIDS\models` automatically the first time it's needed.
+
 4. **Launch the app** from the Start Menu shortcut. On launch, the
    Electron main process spawns `resources/backend/venv/Scripts/python.exe
    run_api.py`, waits for `/api/health` to respond, then loads the UI.
 
-### Distributing the model file itself
+### If you ever need to distribute the model separately instead
 
-`setup_wizard.py --model-url <url>` can also download a zip containing
-those 4 files from wherever you host them (a private S3 bucket, a
-release asset, etc.) instead of requiring a local folder — useful if
-you want the installer to be closer to "download and go" for end users
-who don't have the training pipeline's output on hand.
+If a future model is too large to comfortably bundle, `setup_wizard.py
+--model-url <url>` can download a zip containing those files from
+wherever you host them (a release asset, etc.) instead - the mechanism
+this project used before bundling became the simpler default.
 
 ### Setting up Google Sign-In (optional)
 

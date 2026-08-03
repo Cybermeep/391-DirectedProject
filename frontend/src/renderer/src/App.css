@@ -39,6 +39,11 @@
   padding: 0;
 }
 
+*, *::before, *::after {
+  transition: background-color 0.35s ease, border-color 0.35s ease, color 0.35s ease,
+    box-shadow 0.35s ease, fill 0.35s ease, stroke 0.35s ease;
+}
+
 body {
   background: var(--bg);
   color: var(--text);
@@ -57,19 +62,41 @@ body {
 
 .app-header {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: space-between;
-  padding: 12px 20px;
+  padding: 0 20px;
   background: var(--surface);
-  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
+  .header-left {
+    display: flex;
+    align-items: stretch;
+    gap: 24px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 0;
+  }
+
   .app-header h1 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-size: 18px;
     font-weight: 600;
     color: var(--accent);
     margin: 0;
+    padding: 12px 0;
+  }
+
+  .app-logo {
+    height: 26px;
+    width: 26px;
+    object-fit: contain;
   }
 
 .status-bar {
@@ -89,8 +116,6 @@ body {
 
   .status-dot.active {
     background: var(--success);
-    box-shadow: 0 0 6px var(--success);
-    animation: pulse 2s ease-in-out infinite;
   }
 
   .status-dot.offline {
@@ -160,39 +185,43 @@ body {
   background: var(--hover-tint);
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.4;
-  }
-}
-
 .app-nav {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 4px;
+  padding: 0 16px;
 }
 
 .app-nav a {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
   color: var(--text-muted);
   text-decoration: none;
   font-size: 13px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  transition: background 0.15s ease, color 0.15s ease;
+  font-weight: 500;
+  padding: 0 12px;
+  transition: color 0.15s ease;
 }
 
 .app-nav a:hover {
   color: var(--text);
-  background: var(--hover-tint);
 }
 
 .app-nav a.active {
-  color: var(--accent);
-  background: var(--accent-tint);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.app-nav-indicator {
+  position: absolute;
+  bottom: 0;
+  height: 3px;
+  background: #fff;
+  border-radius: 2px 2px 0 0;
+  transition: left 0.25s ease, width 0.25s ease;
 }
 
 .app-user {

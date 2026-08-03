@@ -101,7 +101,9 @@ const AlertLogPanel: React.FC<{ onSelect?: (alert: Alert) => void }> = ({ onSele
               </div>
               <div className="alert-card-meta">
                 <span>{timeAgo(alert.timestamp)}</span>
-                <span>{Math.round((alert.ml_confidence || 0) * 100)}% confidence</span>
+                <span>
+                  {alert.rule_id ? 'Rule match' : `${Math.round((alert.ml_confidence || 0) * 100)}% confidence`}
+                </span>
               </div>
               <div className="alert-card-actions">
                 <button onClick={(e) => { e.stopPropagation(); onSelect?.(alert); }}>View Alert</button>

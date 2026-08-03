@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Tier } from '../../services/api';
 import api from '../../services/api';
 import ModelInstallModal from '../dashboard/ModelInstallModal';
 import './Billing.css';
 
-const TIERS: Array<{ id: Tier; label: string; price: string; features: string[] }> = [
+type TierInfo = { id: Tier; label: string; price: string; features: string[] };
+
+const TIERS: TierInfo[] = [
   {
     id: 'free',
     label: 'Free',
@@ -48,10 +50,12 @@ function formatCardNumber(value: string): string {
   return digits.replace(/(.{4})/g, '$1 ').trim();
 }
 
-const UpgradeTier: React.FC = () => {
-  const { user, upgradeTier, downgradeTier } = useAuth();
-  const [showModelModal, setShowModelModal] = useState(false);
-  const [selectedTier, setSelectedTier] = useState<Tier>('pro');
+const PaymentModal: React.FC<{
+  tier: TierInfo;
+  onClose: () => void;
+  onUpgraded: () => void;
+}> = ({ tier, onClose, onUpgraded }) => {
+  const { upgradeTier } = useAuth();
   const [cardNumber, setCardNumber] = useState('');
   const [expMonth, setExpMonth] = useState('');
   const [expYear, setExpYear] = useState('');
@@ -60,17 +64,18 @@ const UpgradeTier: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const currentTier = user?.tier || 'free';
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setSuccess(false);
 
-    if (selectedTier === 'free') {
-      setError('Select Pro or Enterprise to upgrade');
-      return;
-    }
     if (!luhnValid(cardNumber)) {
       setError(
         'This card number does not pass format validation. Try a test number like 4111 1111 1111 1111.'
@@ -80,22 +85,138 @@ const UpgradeTier: React.FC = () => {
 
     setSubmitting(true);
     try {
-      await upgradeTier(selectedTier, {
+      await upgradeTier(tier.id, {
         cardNumber,
         expMonth: parseInt(expMonth, 10),
         expYear: parseInt(expYear, 10),
         cvc,
       });
       setSuccess(true);
-
-      const modelStatus = await api.getModelStatus();
-      if (!modelStatus.loaded) {
-        setShowModelModal(true);
-      }
+      onUpgraded();
     } catch (err: any) {
       setError(err?.message || 'Upgrade failed');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="payment-modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="payment-modal">
+        <button className="payment-modal-close" onClick={onClose} aria-label="Close">
+          &times;
+        </button>
+
+        <div className="payment-modal-tier">
+          <div className="tier-name">{tier.label}</div>
+          <div className="tier-price">
+            {tier.price}
+            <span> / month</span>
+          </div>
+          <ul className="tier-features">
+            {tier.features.map((f) => (
+              <li key={f}>{f}</li>
+            ))}
+          </ul>
+        </div>
+
+        {success ? (
+          <div className="payment-modal-success">
+            <div className="payment-modal-success-icon">✓</div>
+            <h3>You&apos;re upgraded to {tier.label}</h3>
+            <p>Refresh to see newly unlocked features.</p>
+            <button className="auth-submit" onClick={onClose}>
+              Done
+            </button>
+          </div>
+        ) : (
+          <form className="card-form" onSubmit={handleSubmit}>
+            <h3>Payment details</h3>
+            <div className="demo-note">
+              Demo mode - try 4111 1111 1111 1111 (Visa) or 5555 5555 5555 4444 (Mastercard), any future
+              expiration, any 3-digit CVC.
+            </div>
+
+            {error && <div className="auth-error">{error}</div>}
+
+            <div className="auth-form">
+              <div className="auth-field">
+                <label htmlFor="cardNumber">Card number</label>
+                <input
+                  id="cardNumber"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="4111 1111 1111 1111"
+                  value={cardNumber}
+                  onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+                  autoFocus
+                  required
+                />
+              </div>
+              <div className="card-row">
+                <div className="auth-field">
+                  <label htmlFor="expMonth">Exp. month</label>
+                  <input
+                    id="expMonth"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="MM"
+                    maxLength={2}
+                    value={expMonth}
+                    onChange={(e) => setExpMonth(e.target.value.replace(/\D/g, ''))}
+                    required
+                  />
+                </div>
+                <div className="auth-field">
+                  <label htmlFor="expYear">Exp. year</label>
+                  <input
+                    id="expYear"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="YYYY"
+                    maxLength={4}
+                    value={expYear}
+                    onChange={(e) => setExpYear(e.target.value.replace(/\D/g, ''))}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="auth-field">
+                <label htmlFor="cvc">CVC</label>
+                <input
+                  id="cvc"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="123"
+                  maxLength={4}
+                  value={cvc}
+                  onChange={(e) => setCvc(e.target.value.replace(/\D/g, ''))}
+                  required
+                />
+              </div>
+              <button className="auth-submit" type="submit" disabled={submitting}>
+                {submitting ? 'Processing…' : `Upgrade to ${tier.label}`}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const UpgradeTier: React.FC = () => {
+  const { user, downgradeTier } = useAuth();
+  const [showModelModal, setShowModelModal] = useState(false);
+  const [paymentTier, setPaymentTier] = useState<TierInfo | null>(null);
+  const [downgradeError, setDowngradeError] = useState('');
+
+  const currentTier = user?.tier || 'free';
+
+  const handleUpgraded = async () => {
+    const modelStatus = await api.getModelStatus();
+    if (!modelStatus.loaded) {
+      setShowModelModal(true);
     }
   };
 
@@ -113,11 +234,12 @@ const UpgradeTier: React.FC = () => {
       <div className="tier-grid">
         {TIERS.map((tier) => {
           const isCurrent = tier.id === currentTier;
+          const selectable = !isCurrent && tier.id !== 'free';
           return (
             <div
               key={tier.id}
-              className={`tier-card ${selectedTier === tier.id ? 'selected' : ''} ${isCurrent ? 'current' : ''}`}
-              onClick={() => !isCurrent && tier.id !== 'free' && setSelectedTier(tier.id)}
+              className={`tier-card ${isCurrent ? 'current' : ''} ${selectable ? 'selectable' : ''}`}
+              onClick={() => selectable && setPaymentTier(tier)}
             >
               <div className="tier-name">
                 {tier.label}
@@ -132,85 +254,13 @@ const UpgradeTier: React.FC = () => {
                   <li key={f}>{f}</li>
                 ))}
               </ul>
+              {selectable && <div className="tier-cta">Select plan →</div>}
             </div>
           );
         })}
       </div>
 
-      {success && (
-        <div className="billing-success">
-          You&apos;ve been upgraded to {selectedTier}. Refresh to see newly unlocked features.
-        </div>
-      )}
-
-      <form className="card-form" onSubmit={handleSubmit}>
-        <h3>Payment details</h3>
-        <div className="demo-note">
-          Demo mode - try 4111 1111 1111 1111 (Visa) or 5555 5555 5555 4444 (Mastercard), any future
-          expiration, any 3-digit CVC.
-        </div>
-
-        {error && <div className="auth-error">{error}</div>}
-
-        <div className="auth-form">
-          <div className="auth-field">
-            <label htmlFor="cardNumber">Card number</label>
-            <input
-              id="cardNumber"
-              type="text"
-              inputMode="numeric"
-              placeholder="4111 1111 1111 1111"
-              value={cardNumber}
-              onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-              required
-            />
-          </div>
-          <div className="card-row">
-            <div className="auth-field">
-              <label htmlFor="expMonth">Exp. month</label>
-              <input
-                id="expMonth"
-                type="text"
-                inputMode="numeric"
-                placeholder="MM"
-                maxLength={2}
-                value={expMonth}
-                onChange={(e) => setExpMonth(e.target.value.replace(/\D/g, ''))}
-                required
-              />
-            </div>
-            <div className="auth-field">
-              <label htmlFor="expYear">Exp. year</label>
-              <input
-                id="expYear"
-                type="text"
-                inputMode="numeric"
-                placeholder="YYYY"
-                maxLength={4}
-                value={expYear}
-                onChange={(e) => setExpYear(e.target.value.replace(/\D/g, ''))}
-                required
-              />
-            </div>
-            <div className="auth-field">
-              <label htmlFor="cvc">CVC</label>
-              <input
-                id="cvc"
-                type="text"
-                inputMode="numeric"
-                placeholder="123"
-                maxLength={4}
-                value={cvc}
-                onChange={(e) => setCvc(e.target.value.replace(/\D/g, ''))}
-                required
-              />
-            </div>
-          </div>
-          <button className="auth-submit" type="submit" disabled={submitting}>
-            {submitting ? 'Processing…' : `Upgrade to ${selectedTier}`}
-          </button>
-        </div>
-      </form>
+      {downgradeError && <div className="auth-error" style={{ maxWidth: 420 }}>{downgradeError}</div>}
 
       {currentTier !== 'free' && (
         <button
@@ -221,13 +271,21 @@ const UpgradeTier: React.FC = () => {
               try {
                 await downgradeTier();
               } catch (err: any) {
-                setError(err?.message || 'Downgrade failed');
+                setDowngradeError(err?.message || 'Downgrade failed');
               }
             }
           }}
         >
           Downgrade to Free
         </button>
+      )}
+
+      {paymentTier && (
+        <PaymentModal
+          tier={paymentTier}
+          onClose={() => setPaymentTier(null)}
+          onUpgraded={handleUpgraded}
+        />
       )}
 
       {showModelModal && <ModelInstallModal onClose={() => setShowModelModal(false)} />}

@@ -21,7 +21,7 @@ import hashlib
 import logging
 import shutil
 
-from appconfig import MODEL_PATH, PREPROCESSOR_PREFIX, MODEL_MANIFEST_PATH, MODEL_DIR
+from appconfig import MODEL_PATH, PREPROCESSOR_PREFIX, MODEL_MANIFEST_PATH, MODEL_DIR, METRICS_PATH
 from .inference import InferenceEngine
 
 logger = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ def _dev_model_files_present() -> bool:
 
 
 def _copy_dev_model_into_data_dir() -> None:
-    logger.info(f"Found model files in source tree ({_DEV_MODEL_DIR}) - copying into {MODEL_DIR} for local dev use")
+    logger.info(f"Found bundled model files ({_DEV_MODEL_DIR}) - copying into {MODEL_DIR} for use")
     for filename in os.listdir(_DEV_MODEL_DIR):
         if filename in ("__init__.py",) or filename.startswith("__pycache__"):
             continue

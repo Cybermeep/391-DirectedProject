@@ -683,3 +683,138 @@ pattern), but not executed.
   fresh on every alert rather than reusing a shared instance - fine for
   demo/moderate traffic, worth pooling if you later stress-test with a
   sustained high-volume flood.
+
+## Addendum 7: three real bugs found from your first live capture session with a working model
+
+Your log showed the model genuinely working (real varying confidence, correct AI Detection panel math - 8/32 = exactly 25.0%), but surfaced three separate bugs:
+
+- **`api/routes/capture.py`'s status endpoint crashed on every poll while
+  capturing was active** - `unsupported operand type(s) for -: 'NoneType'
+  and 'float'`, repeating every 5 seconds in your log. Root cause:
+  `core/packet_capture.py`'s `get_stats()` used
+  `self._capture_stats.get('end_time', time.time())` - but `.get(key,
+  default)` only falls back to `default` when the key is *missing*, not
+  when it exists with value `None`. `end_time` is deliberately set to
+  `None` while capture is running (it hasn't ended yet) - so every poll
+  during an active capture hit `None - <float>`. Fixed: `self._capture_stats.get('end_time') or time.time()`.
+
+- **`/api/stats/severity_distribution` 404'd**, causing the new Severity
+  Breakdown donut to show "No alerts yet" despite 855 real alerts
+  existing (visible correctly in the Threat Classification donut, a
+  different endpoint). Root cause: when `rule_performance` was added
+  earlier this conversation, the `str_replace` that was supposed to
+  preserve `severity_distribution`'s `@bp.route(...)` decorator above its
+  function body lost it. The function itself was always intact and
+  correct - it was just never registered as a Flask route, so the URL
+  genuinely didn't exist. This is exactly the class of bug `py_compile`
+  can't catch (valid Python either way) and only surfaces at real
+  request time - which is how it was actually found. Fixed by restoring
+  the missing decorator.
+
+- **Alert Log showed "0% confidence" for rule-based alerts** - not a bug
+  in the sense of broken code, but a real semantic clash between two
+  conventions that both happen to write to the same `ml_confidence`
+  field. This project's own rule engines (`rate_signatures.py`, the AST
+  engine, `core/alerting.py`) use `1.0` for a rule match ("certain, by
+  definition"). The other team's real, now-integrated detector code
+  (`rule_engine/detectors.py`'s `_build_alert()`) explicitly sets `0.0`
+  instead - presumably meaning "not a probability, not applicable," but
+  the frontend generically labels this field "X% confidence" everywhere,
+  so `0.0` reads backwards (as "the system is certain this ISN'T a
+  threat," the opposite of what happened). Fixed by making the UI
+  distinguish the two cases explicitly - alerts with a `rule_id` show
+  "Rule match" instead of a percentage, both in the Alert Log cards and
+  the Alert Detail view. Also removed the "Avg. Confidence" column from
+  the Rule Performance table entirely, since every row there is
+  inherently a rule match (never genuine ML) - the column was never
+  going to show a meaningful number regardless of which of the two
+  conventions was in play.
+
+Verified: full backend `py_compile` clean, all 52 tests still passing,
+non-strict `tsc` pass across the entire frontend with no real errors.
+
+## Addendum 8: a fourth instance of the same process failure, and an actual fix this time
+
+Found while investigating your latest log: **both the `METRICS_PATH`
+`NameError` fix and the widened exception handling on `/api/model/status`
+had only ever been given as manual "edit this file yourself" chat
+instructions - never actually applied to the real project.** Every zip
+delivered since those conversations, including the one that produced
+this exact traceback again, still had the original broken code. This is
+the same class of process failure as the interface-listing and eventlet
+fixes earlier in this project (Addendum 5) - a third and fourth instance
+of it, not a new kind of mistake.
+
+Both are now actually applied:
+- `ml_pipeline/model_loader.py`'s import line now includes `METRICS_PATH`
+  (it was already correctly used later in the file - just never
+  imported, exactly as originally diagnosed).
+- `api/routes/predict.py`'s `model_status()` now catches `Exception`
+  broadly and returns the real error type/message as JSON, matching
+  `model_install()`'s already-correct handling right next to it.
+
+Did a full review of every other "edit this yourself" instruction given
+across this entire project and found no further instances of this
+pattern - but given it's now happened four times, the actual process
+fix going forward is: **any live-debugging fix given as chat
+instructions gets applied to the real project with an actual edit in
+the same turn, not deferred as a "just showing you" formality.**
+
+Verified: full backend `py_compile` clean, all 52 tests still passing.
+
+## Addendum 9: merging the frontend team's real UI work with our fixes
+
+Reconciled `391-DirectedProject-main__2_.zip` (their reworked dashboard
+UI, taken from `main` before this session's live-debugging fixes were
+ever pushed there) against the fully-fixed state. Verified every
+difference file-by-file before merging anything, rather than trusting
+either side by default.
+
+**Genuinely new, kept as-is**: product rebrand to "HomiNIDS" with a real
+logo asset, a splash screen on load, a first-login tutorial modal
+(properly wired through `AuthContext`'s new `justLoggedIn`/
+`clearJustLoggedIn`), a Documentation/FAQ page, an animated sliding nav
+tab indicator, collapsible widget headers (Rule Performance and
+Signature Detection tables), a smooth color-transition on the dark/light
+toggle, and a genuine bug fix - case-insensitive username lookups in
+`auth/auth_service.py` (registration uniqueness check and login), fixing
+a real gap where "TestUser" and "testuser" could previously register as
+two different accounts.
+
+**Reapplied on top, since their snapshot predates all of it**: all four
+backend fixes from Addendum 7/8 (`METRICS_PATH` import,
+`severity_distribution`'s missing route decorator, the
+`packet_capture.py` `NoneType` crash, `model_status`'s widened exception
+handling), the rule-match-vs-ML-confidence display fix in
+`AlertDetail.tsx` and `AlertLogPanel.tsx`, and removed the same
+misleading `Avg. Confidence` column from their (nicer, collapsible)
+version of the Rule Performance table. Also confirmed
+`electron-builder.yml` still bundles the trained model (their copy had
+reintroduced the old exclusion - not touched during this merge since it
+lives outside `frontend/src`, which is all that was taken from their
+upload).
+
+**Confirmed still missing, unrelated to this merge**: the actual public
+marketing/download website source (`nids-homepage.vercel.app`) - this
+upload only contained dashboard-app UI work, not that site. Still
+outside this project's authority per earlier discussion in this
+conversation.
+
+**One unresolved TypeScript anomaly, investigated and not fixed**:
+`Documentation.tsx`'s `Object.values(itemRefs.current).forEach((el) =>
+el && observer.observe(el))` throws a real, if odd, error under this
+project's throwaway type-check (`Argument of type '{}' is not
+assignable to parameter of type 'Element'`), persisting even with
+explicit `--lib dom,es2020,es2017.object` added. The code itself is
+standard, idiomatic React/TypeScript - `useRef<Record<string, HTMLElement
+| null>>`, a completely ordinary `Object.values().forEach()` null-check
+pattern. Given every React import already fails in this no-`node_modules`
+sandbox (the same `TS2307` noise filtered everywhere else in this
+project), this is almost certainly the same missing-dependency artifact,
+not a real bug - but flagging it explicitly rather than silently
+filtering it, since it didn't resolve the way other false positives in
+this project reliably have.
+
+Verified: full backend `py_compile` clean, all 52 tests still passing.
+Frontend TS check clean except the one flagged, investigated anomaly
+above.
