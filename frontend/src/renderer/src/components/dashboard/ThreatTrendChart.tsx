@@ -45,7 +45,7 @@ const ThreatTrendChart: React.FC = () => {
   const hasData = data.length > 0 && !data.every((d) => d.total_packets === 0 && d.threats_detected === 0);
 
   return (
-    <div className="widget-card">
+    <div id="tutorial-trend" className="widget-card">
       <div className="widget-header">
         <h3>Threat Detection Trend</h3>
         <div className="timeframe-toggle">
