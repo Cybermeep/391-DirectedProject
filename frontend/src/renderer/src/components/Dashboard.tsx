@@ -56,9 +56,6 @@ const Dashboard: React.FC = () => {
                 {exporting ? 'Exporting…' : '⬇ Export CSV'}
               </button>
             )}
-            <button className="add-widget-btn" title="More widget types coming soon">
-              Add Widget
-            </button>
           </div>
         </div>
         {exportError && <div className="auth-error">{exportError}</div>}
