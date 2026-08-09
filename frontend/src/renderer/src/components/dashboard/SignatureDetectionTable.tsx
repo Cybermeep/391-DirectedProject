@@ -63,7 +63,7 @@ const SignatureDetectionTable: React.FC = () => {
   };
 
   return (
-    <div className="widget-card">
+    <div id="tutorial-signatures" className="widget-card">
       <div className="widget-header widget-header-collapsible" onClick={() => setCollapsed((c) => !c)}>
         <h3>
           <span className={`widget-chevron ${collapsed ? 'collapsed' : ''}`}>▾</span>
