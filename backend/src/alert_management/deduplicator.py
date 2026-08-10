@@ -14,12 +14,7 @@ from .models import Alert, get_session
 logger = logging.getLogger(__name__)
 
 class AlertDeduplicator:
-    """
-    Deduplicates alerts based on similarity and time windows.
-    
-    If the same alert occurs repeatedly within a time window, increment
-    a counter instead of creating a new entry.
-    """
+
     
     def __init__(self, time_window_minutes: int = 5, similarity_threshold: float = 0.9):
         """

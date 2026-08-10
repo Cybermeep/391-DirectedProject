@@ -1,24 +1,7 @@
 #!/usr/bin/env python3
 """
 Guaranteed-to-work showcase of the ML model's reasoning/confidence and the
-explainability module - independent of live packet capture, Npcap driver
-quirks, or LAN topology on demo day. Use this as your fallback (or your
-opening act) alongside the live attacker scripts in this folder.
-
-What it does, against your already-running backend:
-  1. Registers (or logs into) a demo account.
-  2. Upgrades it to Enterprise using a dummy test card (proves the
-     billing/tier-gating flow end-to-end).
-  3. Creates the example SYN-flood rule via the rule builder API (proves
-     the AST rule engine end-to-end).
-  4. Sends a handful of realistic attack-shaped and benign-shaped feature
-     vectors to /api/predict, printing the model's prediction, confidence,
-     and the explainability module's generated explanation for each - and
-     lets each attack-shaped one raise a real alert you can see on the
-     dashboard.
-
-Usage:
-    python predict_showcase.py --api http://localhost:5000/api
+explainability module 
 """
 
 import argparse

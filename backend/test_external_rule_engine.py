@@ -1,14 +1,5 @@
 """
-Tests for core.external_rule_engine - the adapter wiring the external
-rule_engine package into the live pipeline.
-
-The real rule_engine/rules.py (30 concrete rules) is now installed, so
-this tests the adapter's *active* behavior: it should report active,
-correctly convert a scapy-independent packet_info dict into alerts, and
-degrade safely if something in that path errors.
-
-Run with:
-    cd backend && python -m unittest test_external_rule_engine.py -v
+Tests for core.external_rule_engine 
 """
 
 import sys

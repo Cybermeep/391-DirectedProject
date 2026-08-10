@@ -13,6 +13,14 @@ from .models import Alert, get_session, _DEFAULT_DB_PATH
 
 logger = logging.getLogger(__name__)
 
+# Keeps the "active" alert log bounded and fresh: once more than this many
+# alerts are active at once, the oldest ones (by when they were first
+# created, i.e. true FIFO) get auto-archived to 'resolved' - the same
+# action the Archive button in the UI already performs, just automatic.
+# Archived alerts aren't deleted; they just move to the Archived tab.
+MAX_ACTIVE_ALERTS = 100
+
+
 class AlertStore:
     """Handles storage and retrieval of alerts."""
     
@@ -109,6 +117,9 @@ class AlertStore:
             session.refresh(alert)
             
             logger.info(f"Alert created: {alert.alert_id} ({alert.attack_type})")
+
+            self._enforce_active_alert_cap(session)
+
             return alert
             
         except Exception as e:
@@ -246,6 +257,31 @@ class AlertStore:
             return result[:limit_groups]
         finally:
             session.close()
+
+    def _enforce_active_alert_cap(self, session, max_active: int = MAX_ACTIVE_ALERTS) -> None:
+        """
+        FIFO: if more than max_active alerts are currently 'active',
+        auto-archive the oldest ones (by first_seen/creation order) down
+        to the cap. Same effect as a user clicking Archive, just automatic -
+        archived alerts remain fully visible under the Archived tab, they
+        just stop counting toward the active log.
+        """
+        active_count = session.query(Alert).filter_by(status='active').count()
+        overflow = active_count - max_active
+        if overflow <= 0:
+            return
+
+        oldest = (
+            session.query(Alert)
+            .filter_by(status='active')
+            .order_by(Alert.timestamp.asc())
+            .limit(overflow)
+            .all()
+        )
+        for old_alert in oldest:
+            old_alert.status = 'resolved'
+        session.commit()
+        logger.info(f"Auto-archived {len(oldest)} oldest active alert(s) to stay within the {max_active}-alert active cap")
 
     def get_rule_performance(self) -> List[Dict[str, Any]]:
         """

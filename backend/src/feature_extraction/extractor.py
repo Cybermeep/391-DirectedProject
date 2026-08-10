@@ -1,10 +1,5 @@
 """
-Main feature extraction coordinator.
-
-This module provides the primary interface for feature extraction, combining
-all individual feature extractors (basic, count, temporal, payload) into a
-unified pipeline. It can extract features from individual packets, flows,
-or time windows.
+Main feature extraction coordinator
 """
 
 from typing import Dict, Any, List, Optional, Tuple
@@ -20,16 +15,14 @@ from .count_features import CountFeatureExtractor
 from .temporal_features import TemporalFeatureExtractor
 from .payload_features import PayloadFeatureExtractor
 
-# Import from core using absolute import (since src is in sys.path)
+# Import from core using absolute import 
 try:
-    # Try relative import first (works when running as package)
+    # Try relative import first 
     from ..core.packet_processor import PacketProcessor
 except ImportError:
-    # Fall back to absolute import (works when running from backend directory)
     try:
         from core.packet_processor import PacketProcessor
     except ImportError:
-        # Ultimate fallback - try to import with full path
         import sys
         import os
         sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -43,11 +36,7 @@ logger = logging.getLogger(__name__)
 
 class FeatureExtractor:
     """
-    Main feature extraction engine that coordinates all feature extractors.
-    
-    This class serves as the central coordinator for all feature extraction
-    operations. It combines basic, count, temporal, and payload features into
-    complete feature vectors for packets, flows, and time windows.
+    Main feature extraction engine that coordinates all feature extractors
     
     Attributes:
         basic_extractor (BasicFeatureExtractor): Extracts IP, port, protocol features
@@ -58,7 +47,7 @@ class FeatureExtractor:
     """
     
     def __init__(self):
-        """Initialize feature extractor with all sub-extractors."""
+        """Initialize feature extractor with all sub-extractors"""
         self.basic_extractor = BasicFeatureExtractor()
         self.count_extractor = CountFeatureExtractor()
         self.temporal_extractor = TemporalFeatureExtractor()
@@ -69,7 +58,7 @@ class FeatureExtractor:
     
     def extract_features_from_packet(self, packet) -> Dict[str, Any]:
         """
-        Extract complete feature set from a single packet.
+        Extract complete feature set from a single packet
         
         Combines features from:
             - Basic packet info (IP, ports, protocol)
@@ -107,7 +96,7 @@ class FeatureExtractor:
     
     def extract_features_from_flow(self, flow_packets: List) -> Dict[str, Any]:
         """
-        Extract features from a complete flow of packets.
+        Extract features from a complete flow of packets
         
         Combines features from:
             - Basic flow statistics (packet count, total bytes, size stats)
@@ -152,11 +141,7 @@ class FeatureExtractor:
                                     window_start: float, 
                                     window_end: float) -> Dict[str, Any]:
         """
-        Extract features from a time window of packets.
-        
-        Computes aggregate statistics for a group of packets within a
-        specified time window. Useful for detecting anomalies in traffic
-        patterns over time.
+        Extract features from a time window of packets
         
         Args:
             packets (List): List of packets in the window
@@ -210,7 +195,7 @@ class FeatureExtractor:
     
     def _get_flow_key(self, packet) -> Optional[Tuple]:
         """
-        Generate a flow key from a packet.
+        Generate a flow key from a packet
         
         Args:
             packet: Scapy packet object
@@ -252,7 +237,7 @@ class FeatureExtractor:
     
     def create_feature_dataframe(self, packets: List) -> pd.DataFrame:
         """
-        Create a pandas DataFrame from a list of packets.
+        Create a pandas DataFrame from a list of packets
         
         Args:
             packets (List): List of packets to convert
@@ -275,7 +260,7 @@ class FeatureExtractor:
     
     def create_flow_dataframe(self, flows: List[Dict]) -> pd.DataFrame:
         """
-        Create a pandas DataFrame from a list of flows.
+        Create a pandas DataFrame from a list of flows
         
         Args:
             flows (List[Dict]): List of flow dictionaries from FlowBuilder
@@ -306,7 +291,7 @@ class FeatureExtractor:
     
     def normalize_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Normalize numerical features in a DataFrame using z-score.
+        Normalize numerical features in a DataFrame using z-score
         
         Args:
             df (pd.DataFrame): DataFrame with features
@@ -338,7 +323,7 @@ class FeatureExtractor:
     
     def get_feature_names(self) -> Dict[str, List[str]]:
         """
-        Get lists of feature names by category.
+        Get lists of feature names by category
         
         Returns:
             Dict[str, List[str]]: Dictionary mapping categories to feature name lists:
@@ -356,7 +341,7 @@ class FeatureExtractor:
     
     def get_all_feature_names(self) -> List[str]:
         """
-        Get all feature names from all categories.
+        Get all feature names from all categories
         
         Returns:
             List[str]: List of all feature names

@@ -1,15 +1,6 @@
 """
 Wires raw packet capture to actual detection.
 
-Previously, api/routes/capture.py started PacketCapture with no callback
-at all - packets went into a ring buffer and nowhere else. Nothing in the
-codebase connected live capture to feature extraction, the rule engine,
-the ML model, or alert creation. This module is that missing link.
-
-Flow:  scapy packet -> PacketRecord -> LiveFlowTracker -> (on flow done)
-       -> compute_flow_features() -> RuleEngine.evaluate_all() AND (if a
-       model is loaded) InferenceEngine.predict() -> Alert + explanation
-       -> AlertStore + WebSocket broadcast.
 """
 
 from __future__ import annotations
@@ -27,12 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class DetectionPipeline:
-    """
-    Owns a LiveFlowTracker (for AST/custom rules + ML, per completed flow)
-    and a RateSignatureEngine (for built-in flood/scan signatures, across
-    many flows per source IP). Pass `pipeline.handle_packet` as the
-    `callback` argument to `PacketCapture.start_capture(...)`.
-    """
+
 
     def __init__(self, rule_engine=None, alerts_db_path: Optional[str] = None):
         self.rule_engine = rule_engine
@@ -69,7 +55,7 @@ class DetectionPipeline:
     def load_enabled_builtin_signatures(self, codes) -> None:
         self.rate_engine.set_enabled(codes)
 
-    # -- packet ingestion ------------------------------------------------
+    #  packet ingestion 
 
     def handle_packet(self, packet) -> None:
         """Callback passed to PacketCapture. Never raises - a bad packet should never kill the capture thread."""
@@ -167,7 +153,7 @@ class DetectionPipeline:
         )
         return src_ip, dst_ip, src_port, dst_port, protocol, record
 
-    # -- flow completion / detection -------------------------------------
+    #  flow completion / detection 
 
     def _on_flow_complete(self, records, dst_port: int, protocol: int, src_ip: str, dst_ip: str) -> None:
         self.flows_processed += 1

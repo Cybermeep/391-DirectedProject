@@ -1,5 +1,5 @@
 """
-AST node definitions for the user-facing rule/signature language.
+AST node definitions for the user-facing rule/signature language
 
 A rule is a boolean expression over the same 78 flow features the ML
 model consumes, e.g.:
@@ -20,11 +20,10 @@ Grammar (case-insensitive keywords, left-associative):
 from dataclasses import dataclass, field
 from typing import Union, List
 
-# The exact 78 features the trained model expects (label column excluded).
+# The exact 78 features the trained model expects (label column excluded)
 # Field names in rules are validated against this whitelist so a rule can
 # never reference something the inference/feature-extraction pipeline
-# doesn't actually produce - this IS the "ensure their input is valid in
-# our engine" guarantee.
+# doesn't actually produce 
 FEATURE_FIELDS: List[str] = [
     'Dst_Port', 'Protocol', 'Flow_Duration', 'Tot_Fwd_Pkts', 'Tot_Bwd_Pkts',
     'TotLen_Fwd_Pkts', 'TotLen_Bwd_Pkts', 'Fwd_Pkt_Len_Max', 'Fwd_Pkt_Len_Min',
@@ -93,7 +92,7 @@ class OrNode:
 
 
 def node_from_dict(data: dict):
-    """Reconstruct an AST node tree from its JSON dict form (as stored in SQLite)."""
+    """Reconstruct an AST node tree from its JSON dict form """
     if not isinstance(data, dict) or "type" not in data:
         raise RuleSyntaxError("Malformed AST node")
 

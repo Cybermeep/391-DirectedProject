@@ -1,10 +1,5 @@
 """
-Rule-based detection engine.
-
-RuleEngine loads a set of Rule objects, instantiates the matching detector for
-each, and routes incoming packet_info dicts (from PacketProcessor) or flow dicts
-(from FlowBuilder) through all enabled detectors.  It returns a list of alert
-dicts that are directly compatible with AlertStore.create_alert().
+Rule-based detection engine
 
 Usage (standalone):
     from rule_engine import RuleEngine
@@ -107,9 +102,7 @@ class RuleEngine:
         self._flows_analyzed = 0
         self._alerts_generated = 0
 
-    # ------------------------------------------------------------------
     # Public API
-    # ------------------------------------------------------------------
 
     def analyze_packet(self, packet_info: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
@@ -216,9 +209,7 @@ class RuleEngine:
         self._alerts_generated = 0
         logger.info('RuleEngine state reset.')
 
-    # ------------------------------------------------------------------
     # Internal helpers
-    # ------------------------------------------------------------------
 
     def _build_detectors(self) -> List[BaseDetector]:
         detectors: List[BaseDetector] = []

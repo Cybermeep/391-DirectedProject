@@ -1,22 +1,5 @@
 """
-Central runtime configuration for the NIDS backend.
-
-This module resolves *writable, per-machine* paths for the database,
-trained model files, and secrets. It intentionally does NOT assume the
-backend is running from a source checkout - on a fresh install the
-source tree may live under Program Files (read-only) while the actual
-data must live somewhere the running user can write to.
-
-Resolution order for the data directory:
-  1. NIDS_DATA_DIR environment variable (set by the installer / .env)
-  2. <platform user-data dir>/NIDS  (Windows: %APPDATA%\\NIDS,
-     macOS: ~/Library/Application Support/NIDS,
-     Linux: ~/.local/share/NIDS)
-
-Everything the app writes at runtime - the SQLite DB, trained model
-artifacts, logs - lives under this directory so re-installing or
-upgrading the app never touches user data, and a packaged (non-dev)
-build never needs write access to its own install folder.
+Central runtime configuration for the NIDS backend
 """
 
 import os
@@ -49,26 +32,21 @@ MODEL_DIR.mkdir(parents=True, exist_ok=True)
 LOG_DIR = DATA_DIR / "logs"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
-# --- Databases -------------------------------------------------------------
-# alerts.db keeps the existing alert-management schema.
-# app.db holds users, rules, and everything added for auth/tiers/signatures.
+#  Databases 
+# alerts.db keeps the existing alert-management schema
+# app.db holds users, rules, and everything added for auth/tiers/signatures
 ALERTS_DB_PATH = str(DATA_DIR / "alerts.db")
 APP_DB_PATH = str(DATA_DIR / "app.db")
 APP_DB_URI = f"sqlite:///{APP_DB_PATH}"
 
-# --- Model artifacts ---------------------------------------------------------
+#  Model artifacts 
 MODEL_PATH = str(MODEL_DIR / "random_forest.joblib")
 PREPROCESSOR_PREFIX = str(MODEL_DIR / "preprocessor")  # loader appends _scaler/_encoder/_columns.joblib
 METRICS_PATH = str(MODEL_DIR / "evaluation_metrics.json")
 MODEL_MANIFEST_PATH = str(MODEL_DIR / "manifest.json")
 
-# --- Secrets -----------------------------------------------------------------
+#  Secrets 
 def _get_or_create_secret(env_var: str, filename: str) -> str:
-    """
-    Return a persistent secret. Prefer the environment variable; otherwise
-    read/create a secret file under DATA_DIR so the value survives restarts
-    without ever being committed to source control.
-    """
     value = os.getenv(env_var)
     if value:
         return value
@@ -85,10 +63,10 @@ def _get_or_create_secret(env_var: str, filename: str) -> str:
 SECRET_KEY = _get_or_create_secret("SECRET_KEY", ".secret_key")
 JWT_SECRET = _get_or_create_secret("JWT_SECRET", ".jwt_secret")
 
-# --- Google OAuth --------------------------------------------------------
+#  Google OAuth 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 
-# --- Tier feature gates ----------------------------------------------------
+#  Tier feature gates 
 TIER_LIMITS = {
     "free": {
         "alert_history_days": 7,

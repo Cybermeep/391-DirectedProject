@@ -1,16 +1,5 @@
 """
-Launcher script for the NIDS API.
-
-IMPORTANT: eventlet.monkey_patch() must be the very first thing that runs,
-before Flask, SQLAlchemy, threading, or anything else is imported anywhere
-in the process. thread=False is deliberate and load-bearing: by default
-monkey_patch() also converts threading.Thread into a cooperative greenlet
-sharing one real OS thread with the whole event loop. Scapy's sniff()
-reads packets through Npcap via a blocking C-level call that eventlet
-can't make cooperative - with the default patch, a quiet capture
-interface could freeze the entire server (not just the capture thread),
-including the /api/capture/stop request meant to end it. Confirmed on
-real hardware; do not remove thread=False.
+Launcher script for the NIDS API
 """
 import eventlet
 eventlet.monkey_patch(thread=False)

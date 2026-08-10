@@ -1,9 +1,6 @@
 """
-Packet processor for handling raw packets and extracting basic information.
+Packet processor for handling raw packets and extracting basic information
 
-This module provides utilities for parsing and extracting information from
-raw network packets. It handles various protocol layers including Ethernet,
-IP, TCP, UDP, ICMP, DNS, and extracts relevant fields for analysis.
 """
 
 import socket
@@ -16,11 +13,7 @@ logger = logging.getLogger(__name__)
 
 class PacketProcessor:
     """
-    Process and extract information from raw packets.
-    
-    This class provides static methods for parsing network packets and
-    extracting information from various protocol layers. It handles
-    both IPv4 and IPv6 packets and supports TCP, UDP, and ICMP protocols.
+    Process and extract information from raw packets
     
     Attributes:
         PROTOCOL_MAP (dict): Mapping of protocol numbers to names
@@ -42,10 +35,7 @@ class PacketProcessor:
     @staticmethod
     def extract_packet_info(packet) -> Dict[str, Any]:
         """
-        Extract comprehensive information from a packet.
-        
-        This method parses all available protocol layers and extracts
-        relevant fields including addresses, ports, flags, and payload data.
+        Extract comprehensive information from a packet
         
         Args:
             packet: Scapy packet object to analyze
@@ -190,10 +180,7 @@ class PacketProcessor:
     @staticmethod
     def get_packet_size_distribution(packets: list) -> Dict[str, int]:
         """
-        Calculate size distribution of a packet list.
-        
-        Groups packets into size categories: small (<100 bytes),
-        medium (100-500 bytes), large (500-1500 bytes), jumbo (>1500 bytes).
+        Calculate size distribution of a packet list
         
         Args:
             packets (list): List of packet objects
@@ -228,11 +215,7 @@ class PacketProcessor:
     @staticmethod
     def calculate_entropy(data: bytes) -> float:
         """
-        Calculate Shannon entropy of byte data.
-        
-        Shannon entropy measures the randomness or unpredictability of data.
-        Higher entropy (closer to 8) indicates more random data, lower entropy
-        (closer to 0) indicates more structured data.
+        Calculate Shannon entropy of byte data
         
         Args:
             data (bytes): Bytes to calculate entropy for
@@ -288,10 +271,7 @@ class PacketProcessor:
     @staticmethod
     def extract_flow_key(packet_info: Dict[str, Any]) -> Tuple[str, str, int, int, str]:
         """
-        Extract a unique flow identifier from packet information.
-        
-        A flow is identified by the 5-tuple: (src_ip, dst_ip, src_port, dst_port, protocol).
-        This is used to group packets belonging to the same communication session.
+        Extract a unique flow identifier from packet information
         
         Args:
             packet_info (Dict[str, Any]): Packet information dictionary from extract_packet_info()

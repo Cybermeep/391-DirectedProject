@@ -1,10 +1,5 @@
 """
 Packet capture engine using Scapy for live capture and PCAP replay.
-
-This module provides the primary interface for capturing network traffic.
-It supports live capture from network interfaces as well as reading from
-pre-recorded PCAP files. The engine runs in a separate thread and maintains
-a ring buffer to prevent memory exhaustion.
 """
 
 import threading
@@ -25,12 +20,7 @@ logger = logging.getLogger(__name__)
 class PacketCapture:
     """
     Packet capture engine supporting live capture and PCAP replay.
-    
-    This class manages the capture of network packets from a specified interface
-    or from PCAP files. It operates in a separate thread to avoid blocking the
-    main application. Captured packets are stored in a ring buffer and can be
-    processed by callback functions.
-    
+
     Features:
         - Live capture from network interface using Scapy
         - PCAP file reading for replay mode
@@ -102,9 +92,6 @@ class PacketCapture:
         """
         Start live packet capture on the configured interface.
         
-        This method launches a background thread that captures packets and
-        processes them through the provided callback. The capture continues
-        until stop_capture() is called or the optional timeout is reached.
         
         Args:
             callback (Callable, optional): Function to call for each captured packet
@@ -153,10 +140,7 @@ class PacketCapture:
                       timeout: Optional[int] = None) -> None:
         """
         Main capture loop running in a separate background thread.
-        
-        This method uses Scapy's sniff function to capture packets and
-        processes them through the callback chain. It handles cleanup
-        and error recovery.
+       
         
         Args:
             filter_str (str, optional): BPF filter for capture
@@ -187,12 +171,7 @@ class PacketCapture:
     def _process_packet(self, packet) -> None:
         """
         Process a single captured packet and route it through the pipeline.
-        
-        This method handles the incoming packet by:
-        1. Adding it to the ring buffer
-        2. Updating capture statistics
-        3. Calling the user-defined callback if provided
-        4. Adding to the processing queue
+
         
         Args:
             packet: Scapy packet object to process
@@ -227,11 +206,9 @@ class PacketCapture:
     
     def stop_capture(self) -> Dict[str, Any]:
         """
-        Stop the packet capture and return final statistics.
+        Stop the packet capture and return final statistics
         
-        This method signals the capture thread to stop, waits for it to
-        complete, and returns capture statistics. If capture is not running,
-        it returns current statistics.
+
         
         Returns:
             Dict[str, Any]: Dictionary containing final capture statistics:
@@ -268,11 +245,7 @@ class PacketCapture:
                   callback: Optional[Callable] = None,
                   limit: Optional[int] = None) -> int:
         """
-        Read and process packets from a PCAP file.
-        
-        This method loads packets from a PCAP file and processes them as if
-        they were captured live. This is useful for testing, demo scenarios,
-        and replaying captured traffic.
+        Read and process packets from a PCAP file
         
         Args:
             pcap_path (str): Path to the PCAP file to read
@@ -325,10 +298,7 @@ class PacketCapture:
     
     def save_pcap(self, pcap_path: str, packets: Optional[List] = None) -> bool:
         """
-        Save packets from ring buffer to a PCAP file.
-        
-        This method writes packets to a PCAP file for later analysis or replay.
-        If no packet list is provided, it saves the current ring buffer contents.
+        Save packets from ring buffer to a PCAP file
         
         Args:
             pcap_path (str): Path where the PCAP file should be saved
@@ -362,11 +332,7 @@ class PacketCapture:
     
     def get_next_packet(self, timeout: float = 0.1) -> Optional[Any]:
         """
-        Get the next packet from the processing queue.
-        
-        This method retrieves packets from the internal queue, allowing
-        for asynchronous processing. It's useful for applications that
-        want to process packets in a separate loop.
+        Get the next packet from the processing queue
         
         Args:
             timeout (float): Maximum time to wait for a packet in seconds
@@ -388,10 +354,7 @@ class PacketCapture:
     
     def get_stats(self) -> Dict[str, Any]:
         """
-        Get current capture statistics.
-        
-        Returns a dictionary with comprehensive capture statistics including
-        packet counts, durations, and buffer status.
+        Get current capture statistics
         
         Returns:
             Dict[str, Any]: Dictionary containing:
@@ -424,10 +387,7 @@ class PacketCapture:
     
     def clear_buffer(self) -> None:
         """
-        Clear the packet ring buffer.
-        
-        This removes all packets from the buffer, freeing memory.
-        Useful for starting a fresh capture session.
+        Clear the packet ring buffer
         """
         self.ring_buffer.clear()
         logger.info("Ring buffer cleared")

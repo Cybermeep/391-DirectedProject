@@ -127,11 +127,7 @@ def me():
 @bp.route("/upgrade", methods=["POST"])
 @token_required
 def upgrade():
-    """
-    Dummy tier upgrade. Accepts card details for format/Luhn validation
-    only - nothing here contacts a real payment processor and no full
-    card number is ever persisted (only brand + last 4 digits).
-    """
+
     data = request.get_json(silent=True) or {}
 
     try:

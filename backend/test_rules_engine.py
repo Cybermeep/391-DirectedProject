@@ -1,10 +1,5 @@
 """
-Unit tests for the rule/signature engine (rules.parser, rules.evaluator).
-
-Unlike the existing test_*.py scripts in this folder (which are manual,
-server-driven smoke tests), this suite is fully automated - no running
-server or database required - since the parser/evaluator are pure
-functions over strings and dicts.
+Unit tests for the rule/signature engine (rules.parser, rules.evaluator)
 
 Run with:
     cd backend && python -m unittest test_rules_engine.py -v

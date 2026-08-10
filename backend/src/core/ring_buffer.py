@@ -1,10 +1,6 @@
 """
 Ring buffer implementation for packet storage to prevent memory exhaustion.
 
-This module provides a thread-safe circular buffer that maintains a fixed-size
-collection of packets. When the buffer reaches capacity, oldest packets are
-automatically overwritten, preventing memory exhaustion during long capture
-sessions.
 """
 
 from collections import deque
@@ -18,12 +14,7 @@ logger = logging.getLogger(__name__)
 
 class RingBuffer:
     """
-    Thread-safe ring buffer for storing packets with fixed maximum size.
-    
-    This buffer uses a deque with maxlen to automatically handle overflow.
-    All operations are protected by a reentrant lock to ensure thread safety
-    in a multi-threaded capture environment.
-    
+    Thread-safe ring buffer for storing packets with fixed maximum size
     Attributes:
         max_size (int): Maximum number of items the buffer can hold
         buffer (deque): Internal deque storage with maxlen constraint
@@ -54,10 +45,8 @@ class RingBuffer:
     
     def add(self, item: Any) -> bool:
         """
-        Add an item to the ring buffer.
-        
-        If the buffer is at capacity, the oldest item is automatically removed.
-        This operation is thread-safe.
+        Add an item to the ring buffer
+ 
         
         Args:
             item (Any): The item to add to the buffer (typically a packet)
@@ -72,10 +61,7 @@ class RingBuffer:
     
     def get_all(self) -> List[Any]:
         """
-        Retrieve all items currently in the buffer.
-        
-        Returns a copy of the buffer contents to prevent external modification
-        of the internal buffer. Thread-safe.
+        Retrieve all items currently in the buffer
         
         Returns:
             List[Any]: A list containing all items in the buffer in order
@@ -105,14 +91,14 @@ class RingBuffer:
             return list(self.buffer)[-count:]
     
     def clear(self) -> None:
-        """Remove all items from the buffer. Thread-safe."""
+        """Remove all items from the buffer"""
         with self.lock:
             self.buffer.clear()
             logger.debug("Ring buffer cleared")
     
     def __len__(self) -> int:
         """
-        Get the current number of items in the buffer.
+        Get the current number of items in the buffer
         
         Returns:
             int: Current buffer size
@@ -122,7 +108,7 @@ class RingBuffer:
     
     def is_full(self) -> bool:
         """
-        Check if the buffer has reached its maximum capacity.
+        Check if the buffer has reached its maximum capacity
         
         Returns:
             bool: True if buffer is full, False otherwise
@@ -133,7 +119,7 @@ class RingBuffer:
     @property
     def total_added(self) -> int:
         """
-        Get the total number of items added to buffer since creation.
+        Get the total number of items added to buffer since creation
         
         Returns:
             int: Total items added over the buffer's lifetime

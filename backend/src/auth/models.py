@@ -1,9 +1,6 @@
 """
 Database models for user accounts, sessions, and subscription tier.
 
-Uses the same SQLAlchemy declarative style as alert_management.models so
-the codebase stays consistent. Lives in its own database (app.db) so the
-alerts DB schema is never coupled to account data.
 """
 
 from sqlalchemy import (
@@ -19,7 +16,6 @@ Base = declarative_base()
 
 
 class User(Base):
-    """A user account. Supports local (email/password) and Google sign-in."""
 
     __tablename__ = "users"
 
@@ -59,10 +55,7 @@ class User(Base):
 
 
 class RefreshToken(Base):
-    """
-    Long-lived refresh tokens, tracked server-side so logout / logout-all
-    can actually revoke a session instead of just deleting the client copy.
-    """
+
 
     __tablename__ = "refresh_tokens"
 
@@ -77,11 +70,7 @@ class RefreshToken(Base):
 
 
 class BillingRecord(Base):
-    """
-    Dummy billing history. No real payment data is ever stored - only a
-    masked card summary (last 4 digits + brand) purely for display, so the
-    'upgrade' screen has something to show under Billing History.
-    """
+
 
     __tablename__ = "billing_records"
 

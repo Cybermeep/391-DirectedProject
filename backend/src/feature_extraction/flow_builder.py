@@ -1,10 +1,5 @@
 """
-Flow builder for aggregating packets into flows and time windows.
-
-This module provides functionality for grouping packets into network flows
-based on the 5-tuple (src_ip, dst_ip, src_port, dst_port, protocol). It
-manages active flows, handles flow timeouts, and provides completed flows
-for analysis.
+Flow builder for aggregating packets into flows and time windows
 """
 
 from typing import Dict, Any, List, Optional, Tuple
@@ -19,11 +14,7 @@ logger = logging.getLogger(__name__)
 
 class FlowBuilder:
     """
-    Aggregates packets into flows based on 5-tuple key.
-    
-    This class manages the lifecycle of network flows. It groups packets
-    belonging to the same communication session, handles flow timeouts,
-    and provides access to completed flows for feature extraction.
+    Aggregates packets into flows based on 5-tuple key
     
     Features:
         - Flow aggregation by 5-tuple (src_ip, dst_ip, src_port, dst_port, protocol)
@@ -41,7 +32,7 @@ class FlowBuilder:
     
     def __init__(self, flow_timeout: int = 60, max_flow_size: int = 1000):
         """
-        Initialize flow builder with specified parameters.
+        Initialize flow builder with specified parameters
         
         Args:
             flow_timeout (int): Seconds of inactivity before flow is considered complete
@@ -68,10 +59,9 @@ class FlowBuilder:
     
     def get_flow_key(self, packet) -> Optional[Tuple[str, str, int, int, int]]:
         """
-        Generate a flow key from a packet.
+        Generate a flow key from a packet
         
-        The flow key is the 5-tuple: (src_ip, dst_ip, src_port, dst_port, protocol).
-        Direction is normalized so that the smaller IP address is first for consistency.
+        The flow key is the 5-tuple: (src_ip, dst_ip, src_port, dst_port, protocol)
         
         Args:
             packet: Scapy packet object
@@ -120,11 +110,7 @@ class FlowBuilder:
     
     def add_packet(self, packet) -> Optional[str]:
         """
-        Add a packet to the flow builder.
-        
-        This method processes an incoming packet, either adding it to an
-        existing flow or creating a new flow. If a flow is completed as a
-        result (due to timeout or max size), its ID is returned.
+        Add a packet to the flow builder
         
         Args:
             packet: Scapy packet object to add
@@ -175,10 +161,7 @@ class FlowBuilder:
     
     def _complete_flow(self, flow_id: str) -> str:
         """
-        Complete a flow and move it to the completed flows list.
-        
-        This method marks a flow as completed, calculates its duration,
-        and moves it from active to completed for processing.
+        Complete a flow and move it to the completed flows list
         
         Args:
             flow_id (str): ID of the flow to complete
@@ -231,7 +214,7 @@ class FlowBuilder:
     
     def get_all_flows(self) -> List[Dict]:
         """
-        Get all flows (active and completed).
+        Get all flows (active and completed)
         
         Returns:
             List[Dict]: List of all flow dictionaries (active + completed)
@@ -241,16 +224,13 @@ class FlowBuilder:
     
     def expire_old_flows(self) -> List[str]:
         """
-        Expire flows that have exceeded the timeout threshold.
-        
-        This method checks all active flows and completes those that haven't
-        seen a packet in longer than flow_timeout.
-        
+        Expire flows that have exceeded the timeout threshold
+
         Returns:
             List[str]: List of expired flow IDs
             
         Note:
-            This is typically called periodically to clean up old flows.
+            This is typically called periodically to clean up old flows
         """
         expired = []
         current_time = time.time()
@@ -267,7 +247,7 @@ class FlowBuilder:
     
     def _generate_flow_id(self, flow_key: Tuple) -> str:
         """
-        Generate a unique flow ID from the flow key.
+        Generate a unique flow ID from the flow key
         
         Args:
             flow_key (Tuple): Flow key tuple (src_ip, dst_ip, src_port, dst_port, protocol)

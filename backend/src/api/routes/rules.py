@@ -1,11 +1,9 @@
 """
 Rule/signature routes for the NIDS API.
 
-Lets a user write a rule in the mini rule-language (see rules.parser),
-validates it into an AST server-side (never trusting client-parsed ASTs),
-and stores it for the rule engine to run alongside the ML pipeline.
-
-Custom rules are an enterprise-tier feature (see appconfig.TIER_LIMITS).
+Lets a user write a rule in the mini rule-language
+validates it into an AST server-side,
+and stores it for the rule engine to run alongside the ML pipeline
 """
 
 import logging
@@ -115,9 +113,7 @@ def update_rule(rule_id):
             return jsonify({"success": False, "error": "Rule not found"}), 404
 
         if rule.is_builtin:
-            # Anyone can flip a built-in signature on/off - it's a global,
-            # pre-validated detection, not something a free-tier restriction
-            # makes sense for. Nothing else about a built-in row is editable.
+
             disallowed = set(data.keys()) - {"enabled"}
             if disallowed:
                 return jsonify({

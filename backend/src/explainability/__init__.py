@@ -1,8 +1,5 @@
 """
-Explainability module for the NIDS system.
-
-This module provides human-readable explanations for ML-based alerts
-by mapping feature importance to understandable descriptions.
+Explainability module for the NIDS system
 """
 
 from .feature_mapper import FeatureMapper

@@ -55,9 +55,7 @@ def get_alerts():
 @bp.route('/timeline', methods=['GET'])
 def get_alert_timeline():
     """
-    Alert correlation view: recent alerts grouped by source IP, so a
-    sequence of related activity from one attacker reads as a timeline
-    instead of scattered unrelated rows in the main alert log.
+
 
     Query parameters:
         - hours (int): how far back to look (default: 24)
@@ -83,7 +81,7 @@ def get_alert_timeline():
 @tier_required('export_data')
 def export_alerts():
     """
-    Export alerts as CSV. Pro/Enterprise feature (see appconfig.TIER_LIMITS).
+    Export alerts as CSV
 
     Query parameters:
         - days (int): How many days back to include (default: 30)

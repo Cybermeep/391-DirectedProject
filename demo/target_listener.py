@@ -3,11 +3,7 @@
 A tiny TCP listener to run ON the machine hosting the NIDS backend during
 the demo, so the attacker/benign traffic scripts have a real open port to
 talk to (completed handshakes for benign traffic, a live target for the
-scan/flood scripts). Not part of the NIDS app itself - just demo
-scaffolding. Binds to 0.0.0.0 so other machines on the LAN can reach it.
-
-Usage:
-    python target_listener.py --port 8899
+scan/flood scripts). Not part of the NIDS app itself 
 """
 
 import argparse

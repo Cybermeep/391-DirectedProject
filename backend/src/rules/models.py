@@ -1,7 +1,5 @@
 """
-Database model for user-generated rule/signatures. Stored in the same
-app.db database as users (see auth.models) so a single install only ever
-has two SQLite files: alerts.db and app.db.
+Database model for user-generated rule/signatures
 """
 
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, JSON, ForeignKey
@@ -15,18 +13,17 @@ class Rule(Base):
     __tablename__ = "rules"
 
     id = Column(Integer, primary_key=True)
-    # Nullable: built-in signatures are global (not owned by any one user).
     # User-created custom rules always set this.
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     code = Column(String(20), nullable=True, index=True)  # display id, e.g. "RULE-001"
     name = Column(String(120), nullable=False)
     description = Column(Text)
-    attack_type = Column(String(60), nullable=True)  # e.g. "DoS-SYN-Flood", for display only
+    attack_type = Column(String(60), nullable=True)  # e.g. "DoS-SYN-Flood"
     rule_text = Column(Text, nullable=False)   # the AST expression actually evaluated
     ast = Column(JSON, nullable=False)          # validated AST, as produced by ast_nodes
     severity = Column(String(20), default="medium")
-    threshold = Column(Integer, nullable=True)       # display-only for built-ins (see note below)
-    window_seconds = Column(Integer, nullable=True)  # display-only for built-ins (see note below)
+    threshold = Column(Integer, nullable=True)       
+    window_seconds = Column(Integer, nullable=True)  
     is_builtin = Column(Boolean, default=False)
     enabled = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -60,17 +57,7 @@ def get_rules_session():
 
 
 def seed_builtin_signatures() -> None:
-    """
-    Idempotently seed the built-in signature catalog into the rules
-    table on first run. Safe to call on every startup - only inserts
-    rows that don't already exist (matched by code).
-
-    Prefers the external rule_engine package's default_rules() when it's
-    actually populated with real rules (see core/external_rule_engine.py);
-    falls back to this project's own rate_signatures.py catalog
-    otherwise, so the dashboard's Signature Detection table always
-    reflects whichever engine is actually running live capture.
-    """
+  
     external_rules = _get_external_default_rules()
     if external_rules:
         _seed_from_external(external_rules)
@@ -144,7 +131,6 @@ def _seed_from_builtin_rate_signatures() -> None:
 
 
 def get_enabled_builtin_codes():
-    """Codes of currently-enabled built-in signatures, for feeding RateSignatureEngine.set_enabled()."""
     session = get_rules_session()
     try:
         return [r.code for r in session.query(Rule).filter_by(is_builtin=True, enabled=True).all()]

@@ -1,26 +1,5 @@
 """
-Built-in signature catalog + rate/window-based detector.
-
-IMPORTANT ARCHITECTURAL NOTE: this is a *different detection mechanism*
-from rules/evaluator.py's AST rule engine, and it exists for a real
-reason, not just to mirror the frontend screenshot's table columns.
-
-The AST rule engine (rules/evaluator.py) evaluates one *completed flow*
-at a time - e.g. "SYN_Flag_Cnt > 5 within this one 5-tuple". That works
-for attacks that reuse one connection. But a realistic SYN flood or port
-scan usually varies its source port per packet (this project's own
-demo/syn_flood.py and port_scan.py do exactly this), which means each
-packet becomes its *own* separate 1-packet flow to core.flow_tracker -
-so a single flow never accumulates a high SYN count, and the AST rule
-would never fire. Catching that shape of attack requires counting
-events *across many flows*, grouped by source IP, within a sliding time
-window - which is exactly what "Threshold" / "Window" describe.
-
-So: built-in signatures (this file) are rate-based and operate on raw
-packets as they arrive, independent of flow completion. User-authored
-custom rules (rules/evaluator.py) remain AST-based and operate on
-completed flow features. Both feed alerts through the same
-core/alerting.py path.
+Built-in signature catalog + rate/window-based detector
 """
 
 from __future__ import annotations
@@ -46,13 +25,10 @@ class BuiltinSignature:
     threshold: int
     window_seconds: int
     description: str
-    # matcher(src_ip, dst_ip, dst_port, protocol, record) -> the "distinct value"
-    # to key on if this packet counts as an event for this signature, or
-    # None if it doesn't match at all. For plain counting (not distinct-value)
-    # signatures, matcher returns a constant (e.g. True) on match.
+
     matcher: Callable[[str, str, int, int, PacketRecord], Optional[object]]
-    distinct: bool = False  # True = threshold counts distinct matcher() values, not raw event count
-    group_by: str = "src_ip"  # "src_ip" or "dst_ip" - whose traffic this signature tracks
+    distinct: bool = False 
+    group_by: str = "src_ip"  
 
 
 def _is_syn_only(r: PacketRecord) -> bool:
@@ -146,7 +122,7 @@ BUILTIN_BY_CODE = {sig.code: sig for sig in BUILTIN_SIGNATURES}
 
 
 class _SlidingWindowCounter:
-    """Per-key sliding window of (timestamp, value) events."""
+    """Per-key sliding window of (timestamp, value) events"""
 
     def __init__(self):
         self._events: Dict[str, deque] = defaultdict(deque)
@@ -167,8 +143,7 @@ class _SlidingWindowCounter:
 class RateSignatureEngine:
     """
     Evaluates every incoming packet against the enabled built-in
-    signatures and fires (with a cooldown, so it doesn't re-alert on
-    every single packet once past threshold) when a source crosses one.
+    signatures and fires
     """
 
     def __init__(self, on_fire: Callable[[BuiltinSignature, str], None]):

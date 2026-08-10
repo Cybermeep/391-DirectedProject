@@ -25,8 +25,8 @@ pip show scikit-learn   # should print exactly 1.3.0
 ## Option A — Developer setup (running from source)
 
 ```bash
-git clone <your-repo-url>
-cd tempStore
+git clone https://github.com/Cybermeep/391-DirectedProject.git
+cd 391-DirectedProject
 
 # 1. Set up the backend venv + install dependencies + init databases
 python installer/setup_wizard.py --model-dir /path/to/your/trained-model-folder

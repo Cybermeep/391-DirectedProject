@@ -1,10 +1,5 @@
 """
-Stateful detector classes for the rule-based detection engine.
-
-Each detector maintains sliding-window state to evaluate a single Rule
-against a stream of packet_info dicts (from PacketProcessor) or flow dicts
-(from FlowBuilder).  Detectors are instantiated by RuleEngine and should
-not be used directly.
+Stateful detector classes for the rule-based detection engine
 """
 
 import time
@@ -15,12 +10,10 @@ from typing import Any, Dict, List, Optional
 from .rules import Rule
 
 
-# ---------------------------------------------------------------------------
 # Internal helpers
-# ---------------------------------------------------------------------------
 
 class _RateTracker:
-    """Counts events per key inside a sliding time window."""
+    """Counts events per key inside a sliding time window"""
 
     def __init__(self, time_window: float) -> None:
         self._window = time_window
@@ -56,7 +49,7 @@ class _RateTracker:
 
 
 class _UniqueSetTracker:
-    """Tracks unique values per key inside a sliding time window."""
+    """Tracks unique values per key inside a sliding time window"""
 
     def __init__(self, time_window: float) -> None:
         self._window = time_window
@@ -82,9 +75,7 @@ class _UniqueSetTracker:
         self._events.clear()
 
 
-# ---------------------------------------------------------------------------
 # Base detector
-# ---------------------------------------------------------------------------
 
 class BaseDetector(ABC):
     """Common behaviour shared by all concrete detectors."""
@@ -95,7 +86,7 @@ class BaseDetector(ABC):
         self._cleanup_interval = 120.0
         self._last_cleanup = 0.0
 
-    # -- Public interface ---------------------------------------------------
+    # Public interface 
 
     def analyze_packet(self, packet_info: Dict[str, Any]) -> List[Dict[str, Any]]:
         return []
@@ -106,7 +97,7 @@ class BaseDetector(ABC):
     def reset(self) -> None:
         self._last_alerted.clear()
 
-    # -- Helpers for subclasses --------------------------------------------
+    #  Helpers for subclasses 
 
     def _now(self, packet_info: Dict[str, Any]) -> float:
         return packet_info.get('timestamp') or time.time()
@@ -150,12 +141,10 @@ class BaseDetector(ABC):
         return alert
 
 
-# ---------------------------------------------------------------------------
 # Concrete detectors
-# ---------------------------------------------------------------------------
 
 class SYNFloodDetector(BaseDetector):
-    """RULE-001: Detects TCP SYN floods by counting bare SYN packets per source."""
+    """RULE-001: Detects TCP SYN floods by counting bare SYN packets per source"""
 
     def __init__(self, rule: Rule) -> None:
         super().__init__(rule)

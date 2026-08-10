@@ -3,13 +3,6 @@ Packet capture control routes for the NIDS API.
 
 This module provides endpoints for starting, stopping, and monitoring
 packet capture.
-
-AUDIT FIX: the original version started PacketCapture with no callback at
-all, so packets went into a ring buffer and were never actually analyzed -
-there was no live path from capture to detection. /start now builds a
-DetectionPipeline (flow tracking -> feature computation -> rule engine +
-ML model -> alert creation -> websocket broadcast) and passes its
-handle_packet method as the capture callback.
 """
 
 from flask import Blueprint, request, jsonify, current_app
@@ -159,15 +152,10 @@ def get_interfaces():
     try:
         import platform
         if platform.system() == 'Windows':
-            # scapy's generic get_if_list() returns raw device GUIDs on
-            # Windows, meaningless to a human. get_windows_if_list() reads
-            # the same friendly names Windows itself shows (e.g. "Wi-Fi"),
-            # and scapy's sniff()/conf.iface already accept these friendly
-            # names directly on Windows - nothing else needs to change.
+
             from scapy.arch.windows import get_windows_if_list
             raw_interfaces = get_windows_if_list()
-            # Skip virtual/filter pseudo-adapters (WFP filters, QoS
-            # schedulers, WAN miniports) that will never see real traffic.
+
             interfaces = [i['name'] for i in raw_interfaces if i.get('ips')]
             if not interfaces:
                 interfaces = [i['name'] for i in raw_interfaces]

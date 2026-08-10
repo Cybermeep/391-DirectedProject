@@ -2,7 +2,7 @@
 Feature mapper for explainability.
 
 This module maps technical feature names to human-readable descriptions
-and provides context about what feature values indicate.
+and provides context about what feature values indicate
 """
 
 import yaml
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class FeatureMapper:
     """
-    Maps technical features to human-readable descriptions.
+    Maps technical features to human-readable descriptions
     
     Attributes:
         feature_descriptions (Dict): Mapping of feature names to descriptions
@@ -43,7 +43,7 @@ class FeatureMapper:
     
     def _load_lookup(self, lookup_file: Path) -> None:
         """
-        Load the feature lookup YAML file.
+        Load the feature lookup YAML file
         
         Args:
             lookup_file (Path): Path to the YAML file
@@ -66,7 +66,7 @@ class FeatureMapper:
     
     def get_description(self, feature_name: str) -> str:
         """
-        Get human-readable description for a feature.
+        Get human-readable description for a feature
         
         Args:
             feature_name (str): Technical feature name
@@ -78,7 +78,7 @@ class FeatureMapper:
     
     def get_feature_importance_text(self, feature_name: str, importance: float) -> str:
         """
-        Generate text describing feature importance.
+        Generate text describing feature importance
         
         Args:
             feature_name (str): Technical feature name
@@ -106,7 +106,7 @@ class FeatureMapper:
     
     def _get_indicator_text(self, feature_name: str, importance: float) -> str:
         """
-        Get attack indicator text for a feature.
+        Get attack indicator text for a feature
         
         Args:
             feature_name (str): Feature name
@@ -128,7 +128,7 @@ class FeatureMapper:
     
     def get_attack_pattern_explanation(self, attack_type: str) -> Dict[str, Any]:
         """
-        Get explanation for an attack type.
+        Get explanation for an attack type
         
         Args:
             attack_type (str): Type of attack
@@ -153,7 +153,7 @@ class FeatureMapper:
     
     def get_feature_value_context(self, feature_name: str, value: float) -> str:
         """
-        Get context about what a feature value indicates.
+        Get context about what a feature value indicates
         
         Args:
             feature_name (str): Feature name

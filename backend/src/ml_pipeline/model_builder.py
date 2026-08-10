@@ -1,8 +1,5 @@
 """
-Random Forest model builder for network intrusion detection.
-
-This module builds and trains a Random Forest classifier for network
-intrusion detection using the scikit-learn library.
+Random Forest model builder for network intrusion detection
 """
 
 import pandas as pd
@@ -20,10 +17,7 @@ logger = logging.getLogger(__name__)
 
 class ModelBuilder:
     """
-    Builds and trains Random Forest models for intrusion detection.
-    
-    This class provides methods for creating, training, and saving
-    Random Forest classifiers optimized for network intrusion detection.
+    Builds and trains Random Forest models for intrusion detection
     
     Attributes:
         model (RandomForestClassifier): The trained model
@@ -40,7 +34,7 @@ class ModelBuilder:
                  random_state: int = 42,
                  n_jobs: int = -1):
         """
-        Initialize the model builder.
+        Initialize the model builder
         
         Args:
             n_estimators (int): Number of trees in the forest
@@ -72,7 +66,7 @@ class ModelBuilder:
               y_val: Optional[np.ndarray] = None,
               optimize: bool = False) -> Dict[str, Any]:
         """
-        Train the Random Forest model.
+        Train the Random Forest model
         
         Args:
             X_train (np.ndarray): Training features
@@ -93,7 +87,6 @@ class ModelBuilder:
         logger.info(f"Training model with {len(X_train)} samples")
         start_time = time.time()
         
-        # Perform hyperparameter optimization if requested
         if optimize:
             logger.info("Performing hyperparameter optimization...")
             self._optimize_hyperparameters(X_train, y_train)
@@ -139,7 +132,7 @@ class ModelBuilder:
     
     def _optimize_hyperparameters(self, X: np.ndarray, y: np.ndarray) -> None:
         """
-        Perform hyperparameter optimization using GridSearchCV.
+        Perform hyperparameter optimization using GridSearchCV
         
         Args:
             X (np.ndarray): Training features
@@ -191,7 +184,7 @@ class ModelBuilder:
                  y_test: np.ndarray,
                  feature_names: Optional[List[str]] = None) -> Dict[str, Any]:
         """
-        Evaluate the trained model on test data.
+        Evaluate the trained model on test data
         
         Args:
             X_test (np.ndarray): Test features
@@ -374,7 +367,7 @@ class ModelBuilder:
                       y: np.ndarray, 
                       cv: int = 5) -> Dict[str, Any]:
         """
-        Perform cross-validation on the model.
+        Perform cross-validation on the model
         
         Args:
             X (np.ndarray): Features

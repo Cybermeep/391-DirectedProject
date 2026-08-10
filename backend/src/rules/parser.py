@@ -1,15 +1,6 @@
 """
 Recursive-descent parser for the user-facing rule/signature language.
 
-Turns a string like:
-
-    SYN_Flag_Cnt > 5 AND (RST_Flag_Cnt > 3 OR Flow_Byts/s > 1000)
-
-into a validated AST (see ast_nodes.py). Every field name is checked
-against the model's feature whitelist and every operator/value is
-type-checked *before* the rule can be saved or evaluated - this is what
-guarantees a user's custom signature can never crash or silently no-op
-the detection engine at runtime.
 """
 
 import re
@@ -58,7 +49,7 @@ def tokenize(text: str) -> List[Tuple[str, str]]:
 
 
 class _Parser:
-    """Simple recursive-descent parser operating over a flat token list."""
+    """Simple recursive-descent parser operating over a flat token list"""
 
     def __init__(self, tokens: List[Tuple[str, str]]):
         self.tokens = tokens
@@ -133,10 +124,6 @@ class _Parser:
         if operator not in VALID_OPERATORS:
             raise RuleSyntaxError(f"Unknown operator '{operator}'")
 
-        # Value must be numeric. NOT permitting an IDENT here is a deliberate
-        # security/robustness choice - it keeps the language a simple
-        # comparison grammar with no risk of arbitrary attribute/field
-        # lookups or code execution.
         value_tok = self._peek()
         if value_tok[0] != "NUMBER":
             raise RuleSyntaxError(
@@ -150,15 +137,14 @@ class _Parser:
 
 def parse_rule(text: str):
     """
-    Parse and fully validate a rule string, returning its AST root node.
-    Raises RuleSyntaxError with a human-readable message on any problem.
+    Parse and fully validate a rule string, returning its AST root node
     """
     tokens = tokenize(text)
     return _Parser(tokens).parse()
 
 
 def rule_to_string(node) -> str:
-    """Render an AST node back to its textual form (for display / round-tripping)."""
+    """Render an AST node back to its textual form (for display / round-tripping)"""
     from .ast_nodes import ComparisonNode as C, AndNode as A, OrNode as O, NotNode as N
 
     if isinstance(node, C):

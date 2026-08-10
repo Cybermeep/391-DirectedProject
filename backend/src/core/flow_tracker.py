@@ -1,7 +1,6 @@
 """
 Tracks in-progress network flows in memory and hands completed ones off
-for feature computation. Pure Python - no scapy dependency - so the
-grouping/completion logic is fully unit-testable on its own.
+for feature computation
 """
 
 from __future__ import annotations
@@ -18,9 +17,6 @@ FlowKey = Tuple[str, str, int, int, int]  # (ip_a, ip_b, port_a, port_b, protoco
 # without seeing FIN/RST (e.g. UDP, or a TCP connection that just stops).
 DEFAULT_IDLE_TIMEOUT_SECONDS = 15.0
 
-# Hard cap so a single very long-lived flow (e.g. an idle SSH session)
-# doesn't accumulate unbounded memory - it gets flushed and a new logical
-# flow starts, same as CICFlowMeter's own flow-timeout behavior.
 MAX_FLOW_DURATION_SECONDS = 120.0
 
 # Safety cap on total tracked flows so a real flood can't exhaust memory
@@ -40,15 +36,7 @@ class _ActiveFlow:
 
 
 def make_flow_key(src_ip: str, dst_ip: str, src_port: int, dst_port: int, protocol: int) -> Tuple[FlowKey, str]:
-    """
-    Build a direction-normalized flow key so both sides of a conversation
-    map to the same flow, and report which direction this packet is.
 
-    Returns (key, direction) where direction is 'fwd' if (src_ip, src_port)
-    sorts first alphabetically/numerically (an arbitrary but *consistent*
-    choice - the first packet actually seen still determines which side
-    of the flow is treated as "the initiator" via LiveFlowTracker below).
-    """
     if (src_ip, src_port) <= (dst_ip, dst_port):
         key = (src_ip, dst_ip, src_port, dst_port, protocol)
         return key, "fwd"
@@ -58,11 +46,7 @@ def make_flow_key(src_ip: str, dst_ip: str, src_port: int, dst_port: int, protoc
 
 
 class LiveFlowTracker:
-    """
-    Groups packets into flows and calls `on_flow_complete(records, dst_port,
-    protocol)` once a flow finishes (FIN+FIN/ACK seen, RST seen, or the
-    flow has been idle past the timeout).
-    """
+
 
     def __init__(
         self,
@@ -74,9 +58,7 @@ class LiveFlowTracker:
         self._on_flow_complete = on_flow_complete
         self._idle_timeout = idle_timeout
         self._max_flow_duration = max_flow_duration
-        # Tracks which IP/port pair was the *actual* first-seen sender for
-        # each key, so "fwd" always means "the side that opened the flow"
-        # rather than whichever sorts first.
+
         self._initiators: Dict[FlowKey, Tuple[str, int]] = {}
 
     def add_packet(

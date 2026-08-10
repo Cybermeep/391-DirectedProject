@@ -1,18 +1,5 @@
 """
-Model bootstrap for a fresh install.
-
-The trained model/preprocessor files are intentionally excluded from git
-(they're large binaries, see .gitignore). This module is the single place
-that knows how to find them at runtime:
-
-  1. Look in appconfig.MODEL_DIR (the per-user data directory the
-     installer copies/downloads the model into).
-  2. If missing, raise a clear, actionable error rather than crashing the
-     whole Flask app - routes that need the model report 503 with
-     instructions instead of the server failing to boot at all.
-
-See INSTALL.md / installer/setup_wizard.py for how the model actually
-gets there on a new machine.
+Model bootstrap for a fresh install
 """
 
 import os
@@ -28,12 +15,7 @@ logger = logging.getLogger(__name__)
 
 _engine_instance = None
 
-# Convenience for running from a source checkout: if the trained model
-# ships alongside the code (as it does in this repo's
-# ml_pipeline/models/ folder), use it automatically instead of requiring
-# the installer wizard step first. A packaged/installed build won't have
-# this folder (it's excluded from the Electron bundle - see
-# electron-builder.yml), so this only ever applies to local/dev runs.
+
 _DEV_MODEL_DIR = os.path.join(os.path.dirname(__file__), "models")
 
 
@@ -80,7 +62,6 @@ def model_files_present() -> bool:
 
 
 def write_manifest():
-    """Write a small manifest recording what's installed, for support/debugging."""
     manifest = {
         "model_path": MODEL_PATH,
         "model_sha256": _sha256_of(MODEL_PATH) if os.path.isfile(MODEL_PATH) else None,
@@ -91,12 +72,7 @@ def write_manifest():
 
 
 def get_inference_engine(threshold: float = 0.5) -> InferenceEngine:
-    """
-    Get (and lazily initialize) the process-wide InferenceEngine.
-    Raises ModelNotFoundError if the model artifacts aren't installed yet -
-    callers (routes) should catch this and return a 503 with setup
-    instructions rather than letting it bubble into a 500.
-    """
+
     global _engine_instance
 
     if _engine_instance is not None and _engine_instance.is_loaded:
@@ -134,6 +110,5 @@ def get_inference_engine(threshold: float = 0.5) -> InferenceEngine:
 
 
 def reset_engine():
-    """Used by tests / after an admin re-installs a model at runtime."""
     global _engine_instance
     _engine_instance = None

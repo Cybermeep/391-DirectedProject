@@ -1,9 +1,5 @@
 """
-Data loader for the CSE-CIC-IDS2018 dataset.
-
-This module handles loading, preprocessing, and subsetting the CSE-CIC-IDS2018
-dataset for network intrusion detection. It supports loading from CSV files,
-handling missing values, and selecting specific attack families.
+Data loader for the CSE-CIC-IDS2018 dataset
 """
 
 import os
@@ -22,11 +18,11 @@ logger = logging.getLogger(__name__)
 
 class DataLoader:
     """
-    Handles loading and preprocessing of the CSE-CIC-IDS2018 dataset.
+    Handles loading and preprocessing of the CSE-CIC-IDS2018 dataset
     
     This class provides methods for loading the dataset from CSV files,
     handling missing values, selecting attack families, and preparing
-    data for training and testing.
+    data for training and testing
     
     Attributes:
         data_path (str): Path to the dataset directory
@@ -121,7 +117,7 @@ class DataLoader:
     
     def preprocess_labels(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Preprocess labels for binary classification.
+        Preprocess labels for binary classification
         
         Maps labels to:
             - 'Benign' for normal traffic
@@ -193,7 +189,7 @@ class DataLoader:
     
     def handle_missing_values(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Handle missing values in the dataset.
+        Handle missing values in the dataset
         
         Args:
             df (pd.DataFrame): DataFrame with potential missing values
@@ -239,7 +235,7 @@ class DataLoader:
     
     def balance_dataset(self, df: pd.DataFrame, method: str = 'downsample') -> pd.DataFrame:
         """
-        Balance the dataset by downsampling the majority class.
+        Balance the dataset by downsampling the majority class
         
         Args:
             df (pd.DataFrame): DataFrame with Label_Binary column
@@ -293,7 +289,7 @@ class DataLoader:
                     balance: bool = True,
                     balance_method: str = 'downsample') -> pd.DataFrame:
         """
-        Complete data preparation pipeline.
+        Complete data preparation pipeline
         
         Args:
             df (pd.DataFrame): Raw DataFrame
@@ -320,7 +316,7 @@ class DataLoader:
     
     def get_feature_columns(self, df: pd.DataFrame) -> List[str]:
         """
-        Get list of feature columns (exclude label columns).
+        Get list of feature columns (exclude label columns)
         
         Args:
             df (pd.DataFrame): DataFrame with features
@@ -336,7 +332,7 @@ class DataLoader:
                   test_size: float = 0.3,
                   random_state: int = 42) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
-        Split data into train and test sets.
+        Split data into train and test sets
         
         Args:
             df (pd.DataFrame): Prepared DataFrame

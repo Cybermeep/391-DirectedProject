@@ -1,12 +1,6 @@
 #!/usr/bin/env python3
 """
-Generates ordinary, completed TCP connections against a target you own -
-for contrast against the attack simulators, so the demo shows the
-dashboard staying quiet/green during normal traffic and lighting up only
-during the attack scripts.
-
-Usage:
-    python benign_traffic.py 192.168.1.50 --port 8899 --i-own-this-network
+Generates ordinary, completed TCP connections against a target you own
 """
 
 import argparse

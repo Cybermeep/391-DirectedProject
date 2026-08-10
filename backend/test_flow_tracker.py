@@ -1,8 +1,5 @@
 """
-Unit tests for core.flow_tracker.LiveFlowTracker.
-
-Run with:
-    cd backend && python -m unittest test_flow_tracker.py -v
+Unit tests for core.flow_tracker.LiveFlowTracker
 """
 
 import sys

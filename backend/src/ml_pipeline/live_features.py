@@ -1,32 +1,5 @@
 """
-Live flow feature computation - the missing link between raw capture and
-the trained model / rule engine.
-
-IMPORTANT CONTEXT (see AUDIT.md for the full writeup): the pre-existing
-`feature_extraction/` package (basic_features.py, count_features.py, etc.)
-produces a *different* schema (snake_case keys like `syn_count`,
-`total_duration`) than what the trained model expects (CICFlowMeter-style
-keys like `SYN_Flag_Cnt`, `Flow_Duration`). The two were never actually
-wired together. Rather than bolt a translation layer onto extractors
-whose semantics don't line up, this module computes the model's exact
-78-field schema directly from raw packet timing/length/flag data.
-
-This prioritizes *internal consistency* - so rule thresholds you
-calibrate against your own live traffic behave predictably - over
-guaranteed byte-for-byte parity with whatever the original CICFlowMeter
-tool computed when the training set was built. Two conventions in
-particular are assumptions, called out below:
-
-  1. Duration/IAT fields are in MICROSECONDS (the common convention for
-     the CSE-CIC-IDS2018 dataset this model was trained on).
-  2. "Bulk transfer" fields (Fwd_Byts/b_Avg etc.) and true multi-subflow
-     stats are approximated as 0 / single-subflow, since they require
-     CICFlowMeter's specific bulk-detection heuristic and rarely matter
-     for short demo flows.
-
-If you need publication-grade parity, capture a pcap, run the real
-CICFlowMeter tool on it, and compare column-by-column against
-`compute_flow_features` on the same packets.
+Live flow feature computation
 """
 
 from __future__ import annotations
@@ -35,20 +8,12 @@ import statistics
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional
 
-# Idle-period threshold: a gap between consecutive packets longer than
-# this is considered "idle" time rather than part of an "active" burst,
-# matching CICFlowMeter's default of 1,000,000 microseconds (1 second).
 IDLE_THRESHOLD_US = 1_000_000.0
 
 
 @dataclass
 class PacketRecord:
-    """
-    A minimal, scapy-independent representation of one captured packet,
-    used as the unit of input to flow tracking and feature computation.
-    Keeping this decoupled from scapy means the feature math below can be
-    fully unit-tested without scapy/Npcap installed.
-    """
+
 
     timestamp: float  # seconds, e.g. time.time()
     length: int  # total packet length in bytes
@@ -75,7 +40,6 @@ def _safe_std(values: List[float]) -> float:
 
 
 def _iat_stats(timestamps_us: List[float]) -> Dict[str, float]:
-    """Inter-arrival-time stats (microseconds) for a sorted list of packet timestamps."""
     if len(timestamps_us) < 2:
         return {"tot": 0.0, "mean": 0.0, "std": 0.0, "max": 0.0, "min": 0.0}
     diffs = [b - a for a, b in zip(timestamps_us, timestamps_us[1:])]
@@ -91,7 +55,7 @@ def _iat_stats(timestamps_us: List[float]) -> Dict[str, float]:
 def _active_idle_stats(timestamps_us: List[float]) -> Dict[str, Dict[str, float]]:
     """
     Split a flow's packet timestamps into alternating active bursts / idle
-    gaps (CICFlowMeter-style), and return mean/std/max/min for each.
+    gaps (CICFlowMeter-style), and return mean/std/max/min for each
     """
     if len(timestamps_us) < 2:
         return {
@@ -125,7 +89,7 @@ def _active_idle_stats(timestamps_us: List[float]) -> Dict[str, Dict[str, float]
 
 def compute_flow_features(records: List[PacketRecord], dst_port: int, protocol: int) -> Dict[str, Any]:
     """
-    Compute the model's full 78-feature schema for one completed flow.
+    Compute the model's full 78-feature schema for one completed flow
 
     Args:
         records: packets belonging to this flow, in capture order.
@@ -224,14 +188,12 @@ def compute_flow_features(records: List[PacketRecord], dst_port: int, protocol: 
         "Pkt_Size_Avg": _safe_mean(all_lengths),
         "Fwd_Seg_Size_Avg": _safe_mean(fwd_seg_sizes),
         "Bwd_Seg_Size_Avg": _safe_mean(bwd_seg_sizes),
-        # Bulk-transfer averages: approximated as 0 (see module docstring).
         "Fwd_Byts/b_Avg": 0.0,
         "Fwd_Pkts/b_Avg": 0.0,
         "Fwd_Blk_Rate_Avg": 0.0,
         "Bwd_Byts/b_Avg": 0.0,
         "Bwd_Pkts/b_Avg": 0.0,
         "Bwd_Blk_Rate_Avg": 0.0,
-        # Single-subflow approximation (see module docstring).
         "Subflow_Fwd_Pkts": len(fwd),
         "Subflow_Fwd_Byts": sum(fwd_lengths),
         "Subflow_Bwd_Pkts": len(bwd),

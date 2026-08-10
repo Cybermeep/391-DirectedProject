@@ -1,12 +1,8 @@
 """
 Unit tests for auth.auth_service.
 
-NOTE: requires the full backend dependency set (SQLAlchemy in particular).
-Run with:
-    cd backend && python -m unittest test_auth_service.py -v
-
 Uses a temporary SQLite file per test run (via NIDS_DATA_DIR) so it never
-touches your real app.db.
+touches real app.db.
 """
 
 import os

@@ -1,11 +1,5 @@
 """
 Prediction routes for the NIDS API.
-
-app.py has always imported this blueprint (`from .routes import alerts,
-capture, stats, predict`) but the file did not exist - the app would
-throw ImportError on startup before this fix. This wires the existing
-ml_pipeline.InferenceEngine (which was fully implemented but never
-connected to any route) up to /api/predict and /api/model/status.
 """
 
 import logging
@@ -33,14 +27,7 @@ def model_status():
 
 @bp.route("/model/install", methods=["POST"])
 def model_install():
-    """
-    Explicitly trigger model loading/installation (the same dev-fallback
-    copy-from-source-tree logic in ml_pipeline/model_loader.py that
-    normally only runs lazily on first prediction). Lets the frontend
-    show an immediate "installing the trained model..." popup right
-    after a tier upgrade, rather than waiting for the first prediction
-    to silently trigger it - or discovering days later that it never did.
-    """
+
     try:
         engine = get_inference_engine()
         return jsonify({"success": True, "loaded": True, "stats": engine.get_stats()})
@@ -64,12 +51,7 @@ def predict():
           "dest_ip": "192.168.1.50"        # optional, cosmetic only
         }
 
-    Always returns the raw prediction plus a generated human-readable
-    explanation. If the prediction is 'Attack' and create_alert isn't
-    explicitly false, also stores a real Alert (deduplicated, broadcast
-    over websocket) - so calling this endpoint directly (e.g. from
-    demo/predict_showcase.py) produces the same dashboard experience a
-    live-captured detection would.
+
     """
     data = request.get_json(silent=True) or {}
     features = data.get("features")

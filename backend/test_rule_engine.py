@@ -1,11 +1,5 @@
 """
-Test script for the Rule-Based Detection Engine.
-
-Run from the backend/ directory:
-    python test_rule_engine.py
-
-No network interface or trained model required — all tests use
-synthetic packet_info dicts matching PacketProcessor output format.
+Test script for the Rule-Based Detection Engine
 """
 
 import sys

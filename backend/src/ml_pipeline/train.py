@@ -1,12 +1,6 @@
 #!/usr/bin/env python3
 """
-Training script for the NIDS ML pipeline.
-
-This script handles the complete training pipeline including:
-1. Loading and preprocessing the CSE-CIC-IDS2018 dataset
-2. Training a Random Forest classifier
-3. Evaluating model performance
-4. Saving the trained model and preprocessor
+Training script for the NIDS ML pipeline
 """
 
 import os
@@ -40,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 def parse_arguments():
     """
-    Parse command line arguments.
+    Parse command line arguments
     
     Returns:
         argparse.Namespace: Parsed arguments
@@ -115,7 +109,7 @@ def parse_arguments():
 
 def main():
     """
-    Main training function.
+    Main training function
     """
     args = parse_arguments()
     
@@ -134,7 +128,7 @@ def main():
     output_path = Path(args.output_path)
     output_path.mkdir(parents=True, exist_ok=True)
     
-    # Step 1: Load data
+    # Load data
     logger.info("\n" + "=" * 60)
     logger.info("Step 1: Loading Data")
     logger.info("=" * 60)
@@ -151,7 +145,7 @@ def main():
         logger.error("Please download the CSE-CIC-IDS2018 dataset to the specified path")
         return 1
     
-    # Step 2: Prepare data
+    # Prepare data
     logger.info("\n" + "=" * 60)
     logger.info("Step 2: Preparing Data")
     logger.info("=" * 60)
@@ -162,7 +156,7 @@ def main():
         balance_method='downsample'
     )
     
-    # Step 3: Split data
+    # Split data
     logger.info("\n" + "=" * 60)
     logger.info("Step 3: Splitting Data")
     logger.info("=" * 60)
@@ -172,15 +166,14 @@ def main():
         test_size=args.test_size
     )
     
-    # Step 4: Preprocess data
+    # Preprocess data
     logger.info("\n" + "=" * 60)
     logger.info("Step 4: Preprocessing Data")
     logger.info("=" * 60)
     
     preprocessor = Preprocessor()
     
-    # ---- FIX: Separate features and labels BEFORE passing to preprocessor ----
-    # Drop ALL label columns (both original and binary)
+    # Drop ALL label columns 
     label_columns = ['Label', 'label', 'Class', 'class', 'Label_Binary']
     
     # Training data
@@ -212,7 +205,7 @@ def main():
     logger.info(f"Training features shape: {X_train.shape}")
     logger.info(f"Test features shape: {X_test.shape}")
     
-    # Step 5: Train model
+    # Train model
     logger.info("\n" + "=" * 60)
     logger.info("Step 5: Training Model")
     logger.info("=" * 60)
@@ -230,7 +223,7 @@ def main():
         optimize=args.optimize
     )
     
-    # Step 6: Evaluate model
+    # Evaluate model
     if not args.skip_evaluation:
         logger.info("\n" + "=" * 60)
         logger.info("Step 6: Evaluating Model")
@@ -279,7 +272,7 @@ def main():
         logger.info(f"Evaluation complete. Test accuracy: {metrics['accuracy']:.4f}")
         logger.info(f"Test F1-score: {metrics['f1_score']:.4f}")
     
-    # Step 7: Save model and preprocessor
+    # Save model and preprocessor
     logger.info("\n" + "=" * 60)
     logger.info("Step 7: Saving Model and Preprocessor")
     logger.info("=" * 60)
@@ -293,7 +286,7 @@ def main():
     logger.info(f"Model saved to: {model_path}")
     logger.info(f"Preprocessor saved to: {preprocessor_path}")
     
-    # Step 8: Test inference
+    # Test inference
     logger.info("\n" + "=" * 60)
     logger.info("Step 8: Testing Inference Engine")
     logger.info("=" * 60)

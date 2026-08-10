@@ -1,8 +1,5 @@
 ﻿"""
-Explanation generator for ML alerts.
-
-This module generates human-readable explanations for ML-based alerts
-using feature importance and attack patterns.
+Explanation generator for ML alerts
 """
 
 from typing import Dict, Any, List, Optional
@@ -16,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class ExplanationGenerator:
     """
-    Generates human-readable explanations for ML alerts.
+    Generates human-readable explanations for ML alerts
     
     Attributes:
         feature_mapper (FeatureMapper): Maps features to descriptions
@@ -38,7 +35,7 @@ class ExplanationGenerator:
                            alert_data: Dict[str, Any],
                            feature_importances: Optional[Dict[str, float]] = None) -> str:
         """
-        Generate a human-readable explanation for an alert.
+        Generate a human-readable explanation for an alert
         
         Args:
             alert_data (Dict): Alert data including:
@@ -95,7 +92,7 @@ class ExplanationGenerator:
                                     feature_importances: Optional[Dict[str, float]] = None,
                                     top_k: int = 5) -> Dict[str, Any]:
         """
-        Generate a detailed structured explanation.
+        Generate a detailed structured explanation
         
         Args:
             alert_data (Dict): Alert data
@@ -153,7 +150,7 @@ class ExplanationGenerator:
     
     def _get_confidence_text(self, confidence: float) -> str:
         """
-        Get human-readable confidence text.
+        Get human-readable confidence text
         
         Args:
             confidence (float): Confidence score (0-1)
@@ -174,7 +171,7 @@ class ExplanationGenerator:
     
     def _get_importance_text(self, feature_importances: Dict[str, float]) -> str:
         """
-        Get human-readable importance text from top features.
+        Get human-readable importance text from top features
         
         Args:
             feature_importances (Dict[str, float]): Feature importance scores
@@ -195,7 +192,7 @@ class ExplanationGenerator:
     
     def _get_recommendations(self, attack_type: str) -> List[str]:
         """
-        Get recommendations for responding to an attack.
+        Get recommendations for responding to an attack
         
         Args:
             attack_type (str): Type of attack

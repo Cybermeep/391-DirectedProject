@@ -1,23 +1,6 @@
 #!/usr/bin/env python3
 """
-NIDS install wizard.
-
-Run this once after installing the application (or any time you need to
-(re)provision the Python environment or trained model on a machine). It
-handles everything that can't ship inside the git repo:
-
-  1. Creates a virtual environment for the backend and installs
-     requirements.txt into it.
-  2. Detects whether Npcap (required by Scapy for live capture on Windows)
-     is installed, and points you at it if not.
-  3. Installs the trained model artifacts (random_forest.joblib +
-     preprocessor_*.joblib + evaluation_metrics.json) into the per-user
-     app-data directory, either by copying from a local folder or
-     downloading from a URL you provide.
-  4. Initializes both SQLite databases (accounts/rules and alerts).
-  5. Writes a backend/.env with any values you choose to set now
-     (Google OAuth client ID, CORS origins, etc.) - everything else falls
-     back to safe auto-generated defaults on first run.
+NIDS install wizard
 
 Usage:
     python setup_wizard.py                       interactive wizard

@@ -1,9 +1,5 @@
 """
-Basic feature extraction for packets and flows.
-
-This module extracts fundamental network features including IP addresses,
-ports, protocol information, and basic packet characteristics. These features
-form the foundation for more complex analysis.
+Basic feature extraction for packets and flows
 """
 
 from typing import Dict, Any, List, Optional
@@ -17,18 +13,14 @@ logger = logging.getLogger(__name__)
 
 class BasicFeatureExtractor:
     """
-    Extracts basic network features from packets and flows.
+    Extracts basic network features from packets and flows
     
-    This class provides methods for extracting fundamental features such as
-    source/destination IP addresses, port numbers, protocol types, and
-    packet length statistics. These features are used as input for both
-    rule-based and ML-based detection.
     """
     
     @staticmethod
     def extract_packet_features(packet) -> Dict[str, Any]:
         """
-        Extract basic features from a single packet.
+        Extract basic features from a single packet
         
         Features extracted include:
             - Packet length and size metrics
@@ -130,12 +122,8 @@ class BasicFeatureExtractor:
     @staticmethod
     def extract_flow_features(flow_packets: List) -> Dict[str, Any]:
         """
-        Extract aggregate basic features from a flow of packets.
+        Extract aggregate basic features from a flow of packets
         
-        Computes statistics across all packets in a flow including:
-            - Packet count and total bytes
-            - Average, min, max, and standard deviation of packet sizes
-            - Protocols used in the flow
         
         Args:
             flow_packets (List): List of packets belonging to the same flow
@@ -200,7 +188,7 @@ class BasicFeatureExtractor:
     @staticmethod
     def create_basic_feature_vector(packet_features: Dict[str, Any]) -> pd.Series:
         """
-        Create a pandas Series from packet features for ML input.
+        Create a pandas Series from packet features for ML input
         
         Args:
             packet_features (Dict[str, Any]): Dictionary of features from extract_packet_features()
@@ -230,7 +218,7 @@ class BasicFeatureExtractor:
     @staticmethod
     def basic_feature_names() -> List[str]:
         """
-        Get list of basic feature names in standard order.
+        Get list of basic feature names in standard order
         
         Returns:
             List[str]: List of feature column names

@@ -1,20 +1,7 @@
 #!/usr/bin/env python3
 """
-Simulates a SYN-flood-shaped traffic burst against a target you own, for
-demoing the NIDS's DoS/flood detection.
-
-This sends bare TCP SYN packets (no payload, no follow-through) - it
-never completes a handshake, sends no data, and is capped at a small
-total packet count over a few seconds. At these caps it cannot meaningfully
-burden any modern machine; it exists purely to give the capture pipeline
-a flow with the statistical shape of a SYN flood (many SYNs, ~0 ACKs
-completing back, one-directional) to detect.
-
-Usage (run from a second machine/terminal on the same LAN as the NIDS host):
-    python syn_flood.py 192.168.1.50 --port 8899 --i-own-this-network
-
-Requires: pip install scapy   (and on Windows, Npcap - same as the backend)
-May require admin/root privileges to craft raw packets.
+Simulates a SYN-flood-shaped traffic burst against a target, for
+demoing the NIDS's DoS/flood detection
 """
 
 import argparse

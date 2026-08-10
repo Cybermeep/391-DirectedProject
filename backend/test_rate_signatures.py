@@ -1,8 +1,5 @@
 """
-Unit tests for rules.rate_signatures.RateSignatureEngine.
-
-Run with:
-    cd backend && python -m unittest test_rate_signatures.py -v
+Unit tests for rules.rate_signatures.RateSignatureEngine
 """
 
 import sys

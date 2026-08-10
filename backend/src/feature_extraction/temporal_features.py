@@ -1,9 +1,5 @@
 """
-Temporal feature extraction for traffic analysis.
-
-This module extracts timing-related features from network traffic including
-inter-arrival times, packet rates, burstiness metrics, and traffic patterns.
-These features are crucial for detecting certain types of attacks and anomalies.
+Temporal feature extraction for traffic analysis
 """
 
 from typing import Dict, Any, List, Optional
@@ -16,12 +12,7 @@ logger = logging.getLogger(__name__)
 
 class TemporalFeatureExtractor:
     """
-    Extracts temporal features from packet flows.
-    
-    This class provides methods for analyzing the timing characteristics of
-    network traffic. Features extracted include inter-arrival times, packet
-    rates, burstiness, and periodic patterns in traffic.
-    
+    Extracts temporal features from packet flows
     Key features extracted:
         - Inter-arrival time statistics (mean, std, min, max)
         - Packet rate (packets per second)
@@ -33,7 +24,7 @@ class TemporalFeatureExtractor:
     @staticmethod
     def extract_temporal_features(packets: List) -> Dict[str, Any]:
         """
-        Extract comprehensive temporal features from a flow of packets.
+        Extract comprehensive temporal features from a flow of packets
         
         Features computed include:
             - Total duration of flow
@@ -129,10 +120,7 @@ class TemporalFeatureExtractor:
     @staticmethod
     def _extract_timestamps(packets: List) -> List[float]:
         """
-        Extract and sort timestamps from a list of packets.
-        
-        Attempts to extract timestamps from various packet attributes.
-        If no timestamp is available, generates synthetic timestamps.
+        Extract and sort timestamps from a list of packets
         
         Args:
             packets (List): List of packet objects
@@ -160,10 +148,7 @@ class TemporalFeatureExtractor:
     def _calculate_window_variance(timestamps: List[float], 
                                    window_size: float = 1.0) -> float:
         """
-        Calculate variance of packet counts across fixed time windows.
-        
-        This measures how much packet counts vary from window to window,
-        which is useful for detecting traffic pattern changes.
+        Calculate variance of packet counts across fixed time windows
         
         Args:
             timestamps (List[float]): List of packet timestamps
@@ -201,10 +186,7 @@ class TemporalFeatureExtractor:
     @staticmethod
     def find_traffic_patterns(timestamps: List[float]) -> Dict[str, Any]:
         """
-        Identify traffic patterns in a sequence of timestamps.
-        
-        Detects periodicity (regular intervals) and bursts (clusters of
-        packets with very short intervals).
+        Identify traffic patterns in a sequence of timestamps
         
         Args:
             timestamps (List[float]): List of packet timestamps in seconds
@@ -285,7 +267,7 @@ class TemporalFeatureExtractor:
     @staticmethod
     def temporal_feature_names() -> List[str]:
         """
-        Get list of temporal feature names in standard order.
+        Get list of temporal feature names in standard order
         
         Returns:
             List[str]: List of feature column names

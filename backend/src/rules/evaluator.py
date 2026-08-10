@@ -1,6 +1,5 @@
 """
-Evaluates a parsed rule AST against a feature dict (the same 78-feature
-vector produced by feature_extraction and consumed by the ML model).
+Evaluates a parsed rule AST against a feature dict 
 """
 
 import operator as _op
@@ -23,12 +22,7 @@ _OPS = {
 
 def evaluate_rule(node, features: Dict[str, Any]) -> bool:
     """
-    Evaluate an AST node against a feature dict.
-
-    Missing features evaluate the containing comparison to False rather
-    than raising, so one malformed/missing field can't take down the whole
-    rule engine for a live packet flow - it just means that particular
-    rule doesn't fire.
+    Evaluate an AST node against a feature dict
     """
     if isinstance(node, ComparisonNode):
         if node.field_name not in features:
@@ -56,9 +50,7 @@ def evaluate_rule(node, features: Dict[str, Any]) -> bool:
 class RuleEngine:
     """
     Holds a set of loaded (enabled) rules and evaluates all of them against
-    a feature vector, in parallel with - not instead of - the ML pipeline.
-
-    Flow -> Features -> [ML model] + [RuleEngine.evaluate_all] -> Alerts
+    a feature vector, in parallel with the ML pipeline
     """
 
     def __init__(self):

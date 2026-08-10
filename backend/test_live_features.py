@@ -1,13 +1,5 @@
 """
-Unit tests for ml_pipeline.live_features.compute_flow_features.
-
-Deliberately uses plain PacketRecord objects instead of real scapy
-packets, so this suite runs anywhere without scapy/Npcap installed and
-still gives real confidence in the flow-math itself (which is the part
-actually at risk of being wrong).
-
-Run with:
-    cd backend && python -m unittest test_live_features.py -v
+Unit tests for ml_pipeline.live_features.compute_flow_features
 """
 
 import sys

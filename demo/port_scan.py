@@ -1,15 +1,8 @@
 #!/usr/bin/env python3
 """
 Simulates a TCP port scan against a target you own, for demoing the
-NIDS's reconnaissance/port-scan detection.
+NIDS's reconnaissance/port-scan detection
 
-Sends a single SYN packet to each port in a range and moves on
-immediately (doesn't wait for or process responses) - equivalent in
-shape to `nmap -sS`, capped to a small port range and slow enough to be
-completely unremarkable load on the target.
-
-Usage:
-    python port_scan.py 192.168.1.50 --start-port 1 --end-port 200 --i-own-this-network
 """
 
 import argparse

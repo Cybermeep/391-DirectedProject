@@ -1,5 +1,5 @@
 """
-Feature extraction module for converting raw packets to statistical features.
+Feature extraction module for converting raw packets to statistical features
 """
 
 from .extractor import FeatureExtractor

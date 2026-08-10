@@ -50,10 +50,6 @@ def get_dashboard_stats():
         stats = store.get_alert_stats()
 
         since = datetime.utcnow() - timedelta(hours=hours)
-        # Fetch enough rows to actually cover the requested window - the
-        # previous fixed limit=50 would silently undercount any window
-        # with more than 50 alerts in it (increasingly likely for
-        # multi-day/multi-month Pro/Enterprise ranges).
         recent_alerts = store.get_alerts(limit=100000, offset=0, since=since)
 
         # Group alerts by hour for timeline
@@ -124,14 +120,7 @@ def get_attack_type_stats():
 
 @bp.route('/rule_performance', methods=['GET'])
 def get_rule_performance():
-    """
-    Per-rule performance: how many times each rule has fired, when it
-    last fired, and average confidence - merged with the rule's own
-    metadata (name, severity, threshold). Alert data lives in alerts.db;
-    rule metadata lives in app.db - two separate SQLite files, so this
-    queries each and merges by rule_id/code in Python rather than a
-    cross-database SQL join, which SQLite doesn't support directly.
-    """
+
     try:
         from alert_management import AlertStore
         from rules.models import get_rules_session, Rule
@@ -160,9 +149,7 @@ def get_rule_performance():
                     'last_fired': perf.get('last_fired'),
                     'avg_confidence': perf.get('avg_confidence'),
                 })
-            # Rules with no matching DB row (e.g. custom AST rules identified
-            # by numeric id, not a "RULE-XXX" code) still show up via their
-            # own alert history even without rule metadata.
+
             known_ids = {r.code for r in rules if r.code}
             for rule_id, perf in perf_by_id.items():
                 if rule_id not in known_ids:

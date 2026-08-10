@@ -1,9 +1,5 @@
 """
-Count-based features for traffic analysis.
-
-This module extracts features related to packet counts, flag statistics,
-and protocol-specific counts. These features are useful for detecting
-certain attack patterns like SYN floods, port scans, and DoS attacks.
+Count-based features for traffic analysis
 """
 
 from typing import Dict, Any, List, Tuple
@@ -17,11 +13,7 @@ logger = logging.getLogger(__name__)
 
 class CountFeatureExtractor:
     """
-    Extracts count-based features from network traffic flows.
-    
-    This class provides methods for counting various packet attributes
-    including TCP flags, protocol types, port usage, and calculating
-    statistical measures like variance and skewness of packet sizes.
+    Extracts count-based features from network traffic flows
     
     Key features extracted:
         - Total packet counts
@@ -34,7 +26,7 @@ class CountFeatureExtractor:
     @staticmethod
     def extract_count_features(packets: List) -> Dict[str, Any]:
         """
-        Extract comprehensive count-based features from a flow of packets.
+        Extract comprehensive count-based features from a flow of packets
         
         Features computed include:
             - Total packet count
@@ -150,10 +142,8 @@ class CountFeatureExtractor:
                                   src_ip: str, 
                                   dst_ip: str) -> Dict[str, int]:
         """
-        Count packets by traffic direction.
+        Count packets by traffic direction
         
-        Determines whether packets are flowing from source to destination,
-        destination to source, or are unknown direction.
         
         Args:
             packets (List): List of packets
@@ -190,7 +180,7 @@ class CountFeatureExtractor:
     @staticmethod
     def get_unique_ports(packets: List) -> Tuple[int, int]:
         """
-        Count unique source and destination ports in a packet list.
+        Count unique source and destination ports in a packet list
         
         Args:
             packets (List): List of packets

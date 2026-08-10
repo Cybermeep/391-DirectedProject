@@ -1,23 +1,5 @@
 """
-Adapter wiring the external `rule_engine` package (a second team's
-packet-level signature detectors) into the live capture pipeline.
-
-Design: prefer this engine over the built-in `rules/rate_signatures.py`
-engine automatically, but only once it actually has real rules loaded
-(`active_detectors > 0`). Right now `rule_engine/rules.py` is a
-deliberate placeholder shipping zero rules (see its docstring and
-AUDIT.md) - so `is_active()` returns False and the pipeline transparently
-keeps using the built-in engine. The moment the real `rules.py` is
-dropped in, this starts returning True and the pipeline switches over -
-no other code changes needed.
-
-We deliberately do NOT use `RuleEngine.connect_alert_store()` - it would
-persist alerts without generating a websocket broadcast or going through
-this project's dedup-by-source/dest-ip fix (see alert_management/alert_store.py).
-Instead we call `analyze_packet()` ourselves and route the resulting
-alert dicts through `_persist_alert()` below, which reuses everything
-this project already built - just without regenerating an explanation,
-since these detectors already produce their own.
+Adapter wiring the external `rule_engine` package into the live capture pipeline.
 """
 
 from __future__ import annotations
@@ -89,13 +71,7 @@ def analyze_packet(packet) -> None:
 
 
 def _persist_alert(alert: dict) -> None:
-    """
-    Persist + broadcast an alert dict already built by an external
-    detector (rule_engine/detectors.py's BaseDetector._build_alert).
-    Its keys already match AlertStore.create_alert()'s expected shape,
-    and it already includes a human-readable explanation, so - unlike
-    core.alerting.raise_alert() - we don't regenerate one here.
-    """
+
     from alert_management import AlertStore
 
     try:

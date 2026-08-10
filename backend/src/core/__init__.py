@@ -14,10 +14,7 @@ Exports:
 try:
     from .packet_capture import PacketCapture
 except ImportError:
-    # scapy isn't installed in this environment. Submodules that don't
-    # need it (e.g. core.flow_tracker) should still be importable on
-    # their own - only code that actually uses PacketCapture will hit an
-    # error, at the point of use rather than on unrelated imports.
+
     PacketCapture = None
 
 try:

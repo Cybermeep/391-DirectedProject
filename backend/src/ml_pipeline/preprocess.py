@@ -1,8 +1,5 @@
 """
-Data preprocessing for the ML pipeline.
-
-This module handles feature preprocessing including normalization,
-encoding categorical variables, and preparing data for model training.
+Data preprocessing for the ML pipeline
 """
 
 import pandas as pd
@@ -19,10 +16,7 @@ logger = logging.getLogger(__name__)
 
 class Preprocessor:
     """
-    Handles feature preprocessing for the ML pipeline.
-    
-    This class provides methods for normalizing features, encoding categorical
-    variables, and creating preprocessing pipelines.
+    Handles feature preprocessing for the ML pipeline
     
     Attributes:
         scaler (StandardScaler): Fitted scaler for normalization
@@ -41,7 +35,7 @@ class Preprocessor:
     
     def fit(self, df: pd.DataFrame) -> None:
         """
-        Fit the preprocessor on the training data.
+        Fit the preprocessor on the training data
         
         Args:
             df (pd.DataFrame): Training DataFrame (features only, no labels)
@@ -74,7 +68,7 @@ class Preprocessor:
     
     def transform(self, df: pd.DataFrame) -> np.ndarray:
         """
-        Transform the data using fitted preprocessor.
+        Transform the data using fitted preprocessor
         
         Args:
             df (pd.DataFrame): DataFrame to transform
@@ -120,7 +114,7 @@ class Preprocessor:
     
     def fit_transform(self, df: pd.DataFrame, target_col: str = 'Label_Binary') -> Tuple[np.ndarray, np.ndarray]:
         """
-        Fit and transform the data in one step.
+        Fit and transform the data in one step
         
         Args:
             df (pd.DataFrame): DataFrame to fit and transform
@@ -158,7 +152,7 @@ class Preprocessor:
     
     def create_preprocessing_pipeline(self) -> Pipeline:
         """
-        Create a complete preprocessing pipeline.
+        Create a complete preprocessing pipeline
         
         Returns:
             Pipeline: Scikit-learn pipeline with preprocessing steps
@@ -174,7 +168,7 @@ class Preprocessor:
     
     def save(self, path: str) -> None:
         """
-        Save the fitted preprocessor to disk.
+        Save the fitted preprocessor to disk
         
         Args:
             path (str): Path to save the preprocessor
@@ -205,7 +199,7 @@ class Preprocessor:
     
     def load(self, path: str) -> None:
         """
-        Load a fitted preprocessor from disk.
+        Load a fitted preprocessor from disk
         
         Args:
             path (str): Path to the saved preprocessor
@@ -231,7 +225,7 @@ class Preprocessor:
     
     def encode_labels(self, y: pd.Series) -> np.ndarray:
         """
-        Encode labels to numerical values.
+        Encode labels to numerical values
         
         Args:
             y (pd.Series): Label series
@@ -249,7 +243,7 @@ class Preprocessor:
     
     def decode_labels(self, y: np.ndarray) -> np.ndarray:
         """
-        Decode numerical labels back to original labels.
+        Decode numerical labels back to original labels
         
         Args:
             y (np.ndarray): Encoded labels

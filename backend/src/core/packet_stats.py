@@ -1,21 +1,5 @@
 """
-Packet-count tracker, bucketed by hour, persisted to app.db.
-
-Previously this was pure in-memory and reset on every backend restart -
-fine for a live demo, but it meant the trend chart's "Total Packets"
-line (and any tier's promised alert-history retention) couldn't actually
-span more than the current process's uptime. Now it's backed by a small
-table in app.db (the same database as users/rules), loaded on first use
-and periodically flushed - so a day-old or year-old hour bucket survives
-restarts just like alerts already did.
-
-Design: keep the fast in-memory dict as the source of truth for
-increments (a DB write per packet would be far too slow under a real
-flood), and flush the *current* totals to the DB no more than once every
-FLUSH_INTERVAL_SECONDS. Flushing overwrites each hour's row with its
-current total rather than computing a delta - safe and idempotent, since
-a past hour's total never changes again once that hour has ended; only
-the current (still-growing) hour's row gets repeatedly overwritten.
+Packet-count tracker, bucketed by hour, persisted to app.db
 """
 
 from collections import defaultdict
@@ -51,9 +35,7 @@ def _load_from_db() -> None:
             _hourly_counts[row.hour_key] = row.packet_count
         _loaded_from_db = True
     except Exception:
-        # Table may not exist yet on a brand new install before the first
-        # init_auth_database() call - fine, it'll be created and this
-        # will succeed on the next call.
+
         pass
     finally:
         session.close()

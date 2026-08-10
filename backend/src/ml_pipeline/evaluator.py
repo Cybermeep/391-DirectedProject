@@ -1,9 +1,5 @@
 """
-Model evaluation utilities for the ML pipeline.
-
-This module provides comprehensive evaluation tools for the intrusion
-detection model including various metrics, visualization helpers,
-and comparison utilities.
+Model evaluation utilities for the ML pipeline
 """
 
 import pandas as pd
@@ -22,10 +18,7 @@ logger = logging.getLogger(__name__)
 
 class Evaluator:
     """
-    Comprehensive model evaluation utilities.
-    
-    This class provides methods for evaluating classification models
-    with various metrics, visualizations, and performance analysis.
+    Comprehensive model evaluation utilities
     """
     
     def __init__(self):
@@ -38,7 +31,7 @@ class Evaluator:
                       y_proba: Optional[np.ndarray] = None,
                       class_names: Optional[List[str]] = None) -> Dict[str, Any]:
         """
-        Comprehensive model evaluation.
+        Comprehensive model evaluation
         
         Args:
             y_true (np.ndarray): True labels
@@ -100,7 +93,7 @@ class Evaluator:
     
     def print_evaluation(self, metrics: Dict[str, Any]) -> None:
         """
-        Print formatted evaluation metrics.
+        Print formatted evaluation metrics
         
         Args:
             metrics (Dict[str, Any]): Metrics dictionary from evaluate_model()
@@ -131,7 +124,7 @@ class Evaluator:
                              class_names: Optional[List[str]] = None,
                              save_path: Optional[str] = None) -> None:
         """
-        Plot confusion matrix.
+        Plot confusion matrix
         
         Args:
             metrics (Dict[str, Any]): Metrics dictionary from evaluate_model()
@@ -160,7 +153,7 @@ class Evaluator:
                                top_n: int = 20,
                                save_path: Optional[str] = None) -> None:
         """
-        Plot feature importance.
+        Plot feature importance
         
         Args:
             feature_importances (np.ndarray): Feature importance scores
@@ -193,7 +186,7 @@ class Evaluator:
                       metrics: Dict[str, Any],
                       save_path: Optional[str] = None) -> None:
         """
-        Plot ROC curve.
+        Plot ROC curve
         
         Args:
             metrics (Dict[str, Any]): Metrics dictionary from evaluate_model()
@@ -225,7 +218,7 @@ class Evaluator:
                                    metrics: Dict[str, Any],
                                    save_path: Optional[str] = None) -> None:
         """
-        Plot Precision-Recall curve.
+        Plot Precision-Recall curve
         
         Args:
             metrics (Dict[str, Any]): Metrics dictionary from evaluate_model()
@@ -256,7 +249,7 @@ class Evaluator:
                       model_results: Dict[str, Dict[str, Any]],
                       save_path: Optional[str] = None) -> pd.DataFrame:
         """
-        Compare multiple models.
+        Compare multiple models
         
         Args:
             model_results (Dict[str, Dict[str, Any]]): Dictionary of model results
@@ -295,7 +288,7 @@ class Evaluator:
     
     def save_metrics(self, metrics: Dict[str, Any], path: str) -> None:
         """
-        Save metrics to JSON file.
+        Save metrics to JSON file
         
         Args:
             metrics (Dict[str, Any]): Metrics dictionary

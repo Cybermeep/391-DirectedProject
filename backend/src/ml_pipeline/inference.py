@@ -1,8 +1,5 @@
 """
-Real-time inference engine for the ML model.
-
-This module provides the inference engine for making real-time predictions
-on network traffic using the trained Random Forest model.
+Real-time inference engine for the ML model
 """
 
 import numpy as np
@@ -19,11 +16,7 @@ logger = logging.getLogger(__name__)
 
 class InferenceEngine:
     """
-    Real-time inference engine for network intrusion detection.
-    
-    This class provides methods for making predictions on network traffic
-    features using a trained model. It handles feature preprocessing and
-    provides prediction probabilities and explanations.
+    Real-time inference engine for network intrusion detection
     
     Attributes:
         model: Loaded trained model
@@ -61,7 +54,7 @@ class InferenceEngine:
     
     def load_model(self, model_path: str, preprocessor_path: str) -> None:
         """
-        Load a trained model and preprocessor from disk.
+        Load a trained model and preprocessor from disk
         
         Args:
             model_path (str): Path to the trained model file
@@ -94,7 +87,7 @@ class InferenceEngine:
     
     def predict(self, features: Union[pd.DataFrame, Dict[str, Any], List[float]]) -> Dict[str, Any]:
         """
-        Make a prediction on a single sample.
+        Make a prediction on a single sample
         
         Args:
             features (Union[pd.DataFrame, Dict[str, Any], List[float]]): Input features
@@ -127,13 +120,7 @@ class InferenceEngine:
         try:
             proba = self.model.predict_proba(X_scaled)
         except AttributeError as e:
-            # Verified failure mode: a model pickled with one scikit-learn
-            # version (this project pins scikit-learn==1.3.0) can load
-            # without error under a *different* installed version, but
-            # fail the first time it's actually used, with a cryptic
-            # internal AttributeError - not a friendly "version mismatch"
-            # message. Surface it as one, since `pip show scikit-learn`
-            # printing anything other than 1.3.0 is the fix.
+
             raise RuntimeError(
                 f"Model prediction failed, likely due to a scikit-learn version "
                 f"mismatch (model was trained with scikit-learn==1.3.0 - run "
@@ -176,7 +163,7 @@ class InferenceEngine:
     
     def predict_batch(self, features: pd.DataFrame) -> List[Dict[str, Any]]:
         """
-        Make predictions on a batch of samples.
+        Make predictions on a batch of samples
         
         Args:
             features (pd.DataFrame): DataFrame with multiple samples
@@ -220,7 +207,7 @@ class InferenceEngine:
     
     def _prepare_features(self, features: Union[pd.DataFrame, Dict[str, Any], List[float]]) -> pd.DataFrame:
         """
-        Prepare features for prediction.
+        Prepare features for prediction
         
         Args:
             features (Union[pd.DataFrame, Dict[str, Any], List[float]]): Input features
@@ -263,7 +250,7 @@ class InferenceEngine:
     
     def get_feature_importance(self) -> Optional[pd.DataFrame]:
         """
-        Get feature importance from the loaded model.
+        Get feature importance from the loaded model
         
         Returns:
             Optional[pd.DataFrame]: Feature importance DataFrame or None if not available
@@ -287,7 +274,7 @@ class InferenceEngine:
     
     def set_threshold(self, threshold: float) -> None:
         """
-        Update the classification threshold.
+        Update the classification threshold
         
         Args:
             threshold (float): New threshold value (0-1)

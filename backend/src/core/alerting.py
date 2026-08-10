@@ -1,13 +1,6 @@
 """
 Shared "turn a detection result into a real Alert" helper.
 
-Used by both core.detection_pipeline (live capture) and
-api.routes.predict (direct /api/predict calls), so hitting the predict
-endpoint with a crafted feature vector produces the exact same
-alert-with-explanation experience on the dashboard as a real captured
-attack flow does - useful for demos where live packet capture isn't
-available or reliable, without maintaining two separate explanation code
-paths.
 """
 
 import logging
@@ -48,7 +41,6 @@ def build_explanation(
 
 
 def compute_ml_severity(attack_type: str, confidence: float) -> str:
-    """Delegates to alert_management.SeverityScorer (previously implemented but never actually wired into any alert-creation path)."""
     from alert_management import SeverityScorer
 
     return SeverityScorer().calculate_severity({
@@ -70,7 +62,6 @@ def raise_alert(
     confidence: float,
     rule_id: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Create (or dedup-bump) an Alert, attach a generated explanation, broadcast it, and return the alert dict."""
     from alert_management import AlertStore
 
     message = f"{attack_type} on port {dest_port}/{protocol or '?'}"

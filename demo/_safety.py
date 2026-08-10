@@ -6,18 +6,7 @@ NIDS project: it produces packets with the statistical signature of an
 attack (many SYNs, one-way traffic, a scan across ports, etc.) so the
 detection pipeline has something real to catch. None of it attempts to
 actually exploit, authenticate against, or damage anything - there's no
-payload, no credential guessing against a real service, no amplification.
-
-These guardrails are intentionally hard-coded (not just documented) so
-the scripts can't be pointed at a machine you don't own by accident:
-
-  - target must be a private/loopback/link-local IP address (RFC 1918,
-    127.0.0.0/8, 169.254.0.0/16) - public IPs are refused outright.
-  - every script has a hard packet-count and duration ceiling.
-  - every script rate-limits itself.
-
-Run these only against machines on your own network that you have
-permission to test.
+payload, no credential guessing against a real service, no amplification
 """
 
 from __future__ import annotations
