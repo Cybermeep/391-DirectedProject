@@ -64,7 +64,7 @@ const AlertLogPanel: React.FC<{ onSelect?: (alert: Alert) => void }> = ({ onSele
   const displayed = view === 'active' ? activeAlerts : archivedAlerts;
 
   return (
-    <div className="alert-log-panel">
+    <div  id="tutorial-alerts" className="alert-log-panel">
       <div className="alert-log-header">
         <h3>Alert Log</h3>
         <span className="alert-log-count">{activeAlerts.length}</span>

@@ -19,13 +19,11 @@ const ThreatTrendChart: React.FC = () => {
   const [maxHoursForTier, setMaxHoursForTier] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const requestedHours = TIMEFRAME_HOURS[timeframe];
-
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       try {
-        const res = await api.getDashboardStats(requestedHours);
+        const res = await api.getDashboardStats(TIMEFRAME_HOURS[timeframe]);
         if (!cancelled && res.success) {
           setData(res.timeline);
           setMaxHoursForTier(res.max_hours_for_tier);
@@ -42,9 +40,10 @@ const ThreatTrendChart: React.FC = () => {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [requestedHours]);
+  }, [timeframe]);
 
   const formatTime = (t: string) => t.split(' ')[1]?.slice(0, 5) || t;
+  const requestedHours = TIMEFRAME_HOURS[timeframe];
   const capped = maxHoursForTier != null && requestedHours > maxHoursForTier;
 
   const hasData = data.length > 0 && !data.every((d) => d.total_packets === 0 && d.threats_detected === 0);

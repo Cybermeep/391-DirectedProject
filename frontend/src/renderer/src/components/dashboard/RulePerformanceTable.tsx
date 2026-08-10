@@ -53,7 +53,7 @@ const RulePerformanceTable: React.FC = () => {
   const withActivity = rules.filter((r) => r.fire_count > 0);
 
   return (
-    <div className="widget-card">
+    <div id="tutorial-rules" className="widget-card">
       <div className="widget-header widget-header-collapsible" onClick={() => setCollapsed((c) => !c)}>
         <h3>
           <span className={`widget-chevron ${collapsed ? 'collapsed' : ''}`}>▾</span>

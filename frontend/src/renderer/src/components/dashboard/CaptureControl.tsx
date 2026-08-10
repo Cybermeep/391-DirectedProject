@@ -78,7 +78,7 @@ const CaptureControl: React.FC = () => {
   };
 
   return (
-    <div className="widget-card capture-control">
+    <div id="tutorial-capture" className="widget-card capture-control">
       <div className="widget-header">
         <h3>Packet Capture</h3>
         <span className={`capture-status-text ${isCapturing ? 'live' : ''}`}>
