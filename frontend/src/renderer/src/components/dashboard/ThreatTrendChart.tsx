@@ -86,21 +86,41 @@ const ThreatTrendChart: React.FC = () => {
       {loading ? (
         <div className="widget-empty">Loading…</div>
       ) : !hasData ? (
-        <div className="widget-empty">No traffic captured yet - start capture to see live data.</div>
+        <div className="widget-empty">No traffic data yet. Start a capture to see live numbers.</div>
       ) : (
-        <ResponsiveContainer width="100%" height={280}>
-          <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-            <XAxis dataKey="time" tickFormatter={formatTime} stroke="var(--text-muted)" fontSize={12} />
-            <YAxis stroke="var(--text-muted)" fontSize={12} />
-            <Tooltip
-              labelFormatter={formatTime}
-              contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }}
-            />
-            <Line type="monotone" dataKey="total_packets" name="Total Packets" stroke="var(--accent)" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="threats_detected" name="Threats Detected" stroke="var(--danger)" strokeWidth={2} dot={false} />
-          </LineChart>
-        </ResponsiveContainer>
+        <div className="threat-trend-split">
+          <div className="threat-trend-pane">
+            <div className="threat-trend-pane-label">Total Packets</div>
+            <ResponsiveContainer width="100%" height={260}>
+              <LineChart data={data}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis dataKey="time" tickFormatter={formatTime} stroke="var(--text-muted)" fontSize={12} />
+                <YAxis stroke="var(--text-muted)" fontSize={12} tickFormatter={(v) => v.toLocaleString()} />
+                <Tooltip
+                  labelFormatter={formatTime}
+                  formatter={(value: number) => value.toLocaleString()}
+                  contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }}
+                />
+                <Line type="monotone" dataKey="total_packets" name="Total Packets" stroke="var(--accent)" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="threat-trend-pane">
+            <div className="threat-trend-pane-label">Threats Detected</div>
+            <ResponsiveContainer width="100%" height={260}>
+              <LineChart data={data}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis dataKey="time" tickFormatter={formatTime} stroke="var(--text-muted)" fontSize={12} />
+                <YAxis stroke="var(--text-muted)" fontSize={12} allowDecimals={false} />
+                <Tooltip
+                  labelFormatter={formatTime}
+                  contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }}
+                />
+                <Line type="monotone" dataKey="threats_detected" name="Threats Detected" stroke="var(--danger)" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       )}
     </div>
   );
